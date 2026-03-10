@@ -1,12 +1,24 @@
 import os
+import sys
 import logging
 import configparser
 import shlex
+import shutil
+import tempfile
 import subprocess
 from streamlink import Streamlink
 from PyQt6.QtCore import QStandardPaths
 
 from streamcondor.model import Configuration, Stream
+
+LOG_LEVEL_MAP = {
+  logging.CRITICAL: 'critical',
+  logging.ERROR: 'error',
+  logging.WARNING: 'warning',
+  logging.INFO: 'info',
+  logging.DEBUG: 'debug',
+  logging.NOTSET: 'trace',
+}
 
 log = logging.getLogger(__name__)
 
@@ -98,13 +110,43 @@ def launch_process(command: str | list[str]) -> bool:
   '''
   if isinstance(command, list):
     command = " ".join(command)
+  # we want to run streamlink as a Python module in case it's installed system-wide
+  # but SC is running in a virtualenv OR a newer version is installed in home
+  tokens = shlex.split(command)
+  if not tokens:
+    log.error('Empty command')
+    return False
+  if tokens[0] == 'streamlink':
+    tokens = [sys.executable, '-m', 'streamlink'] + tokens[1:]
+    log.debug(f'Using Python module: {" ".join(tokens[:3])}')
+  log.debug(f'Launching process: {" ".join(tokens)}')
   try:
-    log.debug(f'Launching process: {command}')
-    # Launch process as a detached process
+    is_debug = log.isEnabledFor(logging.DEBUG)
+    log_dir = os.path.join(tempfile.gettempdir(), 'streamcondor')
+    os.makedirs(log_dir, exist_ok=True)
+    log_file = tempfile.NamedTemporaryFile(
+      mode='w',
+      suffix='.log',
+      dir=log_dir,
+      delete=False,
+      delete_on_close=not is_debug
+    )
+    if is_debug:
+      cmd_file = tempfile.NamedTemporaryFile(
+        mode='w',
+        prefix='cmd_',
+        suffix='.log',
+        dir=log_dir,
+        delete=False
+      )
+      cmd_file.write(' '.join(tokens) + '\n')
+      cmd_file.close()
+      log.debug(f'Command written to: {cmd_file.name}')
+    log.debug(f'Process errors will be logged to: {log_file.name}')
     subprocess.Popen(
-      shlex.split(command),
-      stdout=subprocess.DEVNULL,
-      stderr=subprocess.DEVNULL,
+      tokens,
+      stdout=log_file if is_debug else subprocess.DEVNULL,
+      stderr=log_file,
       start_new_session=True
     )
     return True
@@ -124,6 +166,8 @@ def build_sl_command(cfg: Configuration, stream: Stream, alt_player: bool = Fals
   default_sl_args = cfg.default_streamlink_args.replace('$SC.name', stream.name or '').replace('$SC.type', stream.type or '')
   custom_sl_args = (stream.sl_args or '').replace('$SC.name', stream.name or '').replace('$SC.type', stream.type or '')
   merged_args = _merge_args_strings(default_sl_args, custom_sl_args)
+  # Set log level according to our own
+  merged_args += f" --loglevel {LOG_LEVEL_MAP.get(logging.getLogger().getEffectiveLevel(), 'info')}"
   # The media player is optional
   player = cfg.alternate_player if alt_player and cfg.alternate_player else (stream.player or cfg.default_player)
   if player:
@@ -180,6 +224,7 @@ def _parse_args_string(args_string: str) -> dict[str, str | None]:
       # This shouldn't happen if input is well-formed, but skip orphaned values
       i += 1
   return args_dict
+
 
 def _split_args_with_values(args_string: str) -> list[str]:
   """
