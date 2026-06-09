@@ -109,17 +109,19 @@ def launch_process(command: str | list[str]) -> bool:
   Launch a command as a detached process.
   '''
   if isinstance(command, list):
-    command = " ".join(command)
+    tokens = command.copy()
+  else:
+    command = command or ''
+    tokens = shlex.split(command)
   # we want to run streamlink as a Python module in case it's installed system-wide
   # but SC is running in a virtualenv OR a newer version is installed in home
-  tokens = shlex.split(command)
   if not tokens:
     log.error('Empty command')
     return False
   if tokens[0] == 'streamlink':
     tokens = [sys.executable, '-m', 'streamlink'] + tokens[1:]
-    log.debug(f'Using Python module: {" ".join(tokens[:3])}')
-  log.debug(f'Launching process: {" ".join(tokens)}')
+    log.debug(f'Using Python module: {shlex.join(tokens[:3])}')
+  log.debug(f'Launching process: {shlex.join(tokens)}')
   try:
     is_debug = log.isEnabledFor(logging.DEBUG)
     log_dir = os.path.join(tempfile.gettempdir(), 'streamcondor')
@@ -139,7 +141,7 @@ def launch_process(command: str | list[str]) -> bool:
         dir=log_dir,
         delete=False
       )
-      cmd_file.write(' '.join(tokens) + '\n')
+      cmd_file.write(shlex.join(tokens) + '\n')
       cmd_file.close()
       log.debug(f'Command written to: {cmd_file.name}')
     log.debug(f'Process errors will be logged to: {log_file.name}')
@@ -172,10 +174,14 @@ def build_sl_command(cfg: Configuration, stream: Stream, alt_player: bool = Fals
   player = cfg.alternate_player if alt_player and cfg.alternate_player else (stream.player or cfg.default_player)
   if player:
     merged_args += f" --player {player}"
-  # Stream's player args override defaults (too complex to merge, even IF default and custom player are the same)
+  # Stream's player args override defaults.
   player_args = cfg.alternate_player_args if alt_player and cfg.alternate_player_args else (stream.mp_args or cfg.default_player_args)
+  resolved_player_args = None
   if player_args:
-    merged_args += f" --player-args {player_args}"
+    # Player args are treated as a raw single string. Only replace Stream Condor placeholders.
+    sc_name = shlex.quote(stream.name) if stream.name else ''
+    sc_type = shlex.quote(stream.type) if stream.type else ''
+    resolved_player_args = player_args.replace('$SC.name', sc_name).replace('$SC.type', sc_type)
   # Quality: both the default and the stream-specific quality that we save in configuration may not be valid,
   # because every stream has its own set, and if our string doesn't match one of the available qualities the
   # command will fail (i.e. "720p60" instead of "720p"). Checking every time would be too much overhead, so
@@ -184,6 +190,8 @@ def build_sl_command(cfg: Configuration, stream: Stream, alt_player: bool = Fals
   # Build final command list
   command = ['streamlink']
   command.extend(_split_args_with_values(merged_args))
+  if resolved_player_args:
+    command.append(f'--player-args={resolved_player_args}')
   command.append(url)
   command.append(','.join(quality))  ## this may ends up as "best,best", but streamlink doesn't care
   return command
@@ -228,44 +236,17 @@ def _parse_args_string(args_string: str) -> dict[str, str | None]:
 
 def _split_args_with_values(args_string: str) -> list[str]:
   """
-  Split a command-line arguments string into a list, keeping argument-value pairs together.
+  Split a command-line arguments string into tokens.
 
   Args:
     args_string: String containing command-line arguments
 
   Returns:
-    List of strings where each element is either a flag (e.g., "--flag") or
-    an argument with its value (e.g., "--option 123")
+    List of argument tokens preserving quoted values as single entries.
   """
   if not args_string.strip():
     return []
-  # Use shlex to properly handle quoted values
-  tokens = shlex.split(args_string)
-  result = []
-  i = 0
-  while i < len(tokens):
-    token = tokens[i]
-    # Check if token starts with dash(es)
-    if token.startswith('-'):
-      # Check if next token exists and is a value (not starting with dash)
-      if i + 1 < len(tokens) and not tokens[i + 1].startswith('-'):
-        # Combine argument with its value
-        value = tokens[i + 1]
-        # Quote the value if it contains spaces or special chars
-        if ' ' in value or '"' in value or "'" in value:
-          escaped_value = value.replace('"', '\\"')
-          result.append(f'{token} "{escaped_value}"')
-        else:
-          result.append(f"{token} {value}")
-        i += 2
-      else:
-        # Flag without value
-        result.append(token)
-        i += 1
-    else:
-      # Orphaned value (shouldn't happen with well-formed input)
-      i += 1
-  return result
+  return shlex.split(args_string)
 
 def _merge_args_strings(default_args: str, override_args: str) -> str:
   """

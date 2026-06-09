@@ -1,5 +1,6 @@
 import logging
 import platform
+import shlex
 from PyQt6.QtWidgets import (
   QDialog, QVBoxLayout, QHBoxLayout, QTabWidget, QLabel, QLineEdit, QDialogButtonBox, QFormLayout,
   QCheckBox, QTextEdit, QPushButton, QWidget, QApplication
@@ -261,8 +262,24 @@ class StreamDialog(QDialog):
     is_windows = platform.system() == 'Windows'
     continuation = '^' if is_windows else '\\'
     command = build_sl_command(self.cfg, self.get_stream())
-    lines = [command.pop(0)]  # Start with the program name
-    lines.extend([f'  {c}' for c in command])  # Indent the rest
+    lines = [shlex.quote(command[0])]
+    i = 1
+    while i < len(command):
+      token = command[i]
+      if token.startswith('--player-args='):
+        # Keep preview readable: show player args payload as a quoted value.
+        player_args_value = token.split('=', 1)[1]
+        escaped_value = player_args_value.replace('\\', '\\\\').replace('"', '\\"')
+        lines.append(f'  --player-args "{escaped_value}"')
+        i += 1
+        continue
+      # Keep option+value together in preview when they are separate argv items.
+      if token.startswith('-') and '=' not in token and i + 1 < len(command) and not command[i + 1].startswith('-'):
+        lines.append(f"  {shlex.quote(token)} {shlex.quote(command[i + 1])}")
+        i += 2
+      else:
+        lines.append(f"  {shlex.quote(token)}")
+        i += 1
     self.text_preview.setPlainText(f' {continuation}\n'.join(lines))
 
   def _update_notify_descr(self) -> None:
