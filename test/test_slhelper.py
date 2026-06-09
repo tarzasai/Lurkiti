@@ -10,6 +10,8 @@ class DummyCfg:
         self.default_streamlink_args = '--flag'
         self.default_player = 'mpv'
         self.default_player_args = '--no-border'
+        self.alternate_player = 'vlc'
+        self.alternate_player_args = '--fullscreen'
         self.default_quality = 'best'
 
 class TestSlHelper(unittest.TestCase):
@@ -54,6 +56,36 @@ class TestSlHelper(unittest.TestCase):
             "--player-args=--screenshot-template='2 strangers'.%tY%tm%td%tH%tM%tS",
             cmd
         )
+
+    def test_build_sl_command_alt_player_ignores_default_player_args(self):
+        cfg = DummyCfg()
+        s = Stream(
+            url='https://example.com/stream',
+            name='N',
+            type='twitch',
+            quality='best',
+            player='mpv',
+            sl_args='',
+            mp_args=None
+        )
+        cmd = slhelper.build_sl_command(cfg, s, alt_player=True)
+        self.assertNotIn('--player-args=--no-border', cmd)
+        self.assertFalse(any(item.startswith('--player-args=') for item in cmd))
+
+    def test_build_sl_command_alt_player_uses_only_stream_player_args(self):
+        cfg = DummyCfg()
+        s = Stream(
+            url='https://example.com/stream',
+            name='N',
+            type='twitch',
+            quality='best',
+            player='mpv',
+            sl_args='',
+            mp_args='--force-window=immediate'
+        )
+        cmd = slhelper.build_sl_command(cfg, s, alt_player=True)
+        self.assertIn('--player-args=--force-window=immediate', cmd)
+        self.assertNotIn('--player-args=--fullscreen', cmd)
 
     @patch('streamcondor.slhelper.subprocess.Popen')
     def test_launch_process_success(self, mock_popen):

@@ -174,8 +174,9 @@ def build_sl_command(cfg: Configuration, stream: Stream, alt_player: bool = Fals
   player = cfg.alternate_player if alt_player and cfg.alternate_player else (stream.player or cfg.default_player)
   if player:
     merged_args += f" --player {player}"
-  # Stream's player args override defaults.
-  player_args = cfg.alternate_player_args if alt_player and cfg.alternate_player_args else (stream.mp_args or cfg.default_player_args)
+  # Alternate launches must not inherit any global player args.
+  # Only stream-specific args are allowed when using alt_player.
+  player_args = stream.mp_args if alt_player else (stream.mp_args or cfg.default_player_args)
   resolved_player_args = None
   if player_args:
     # Player args are treated as a raw single string. Only replace Stream Condor placeholders.
@@ -185,7 +186,7 @@ def build_sl_command(cfg: Configuration, stream: Stream, alt_player: bool = Fals
   # Quality: both the default and the stream-specific quality that we save in configuration may not be valid,
   # because every stream has its own set, and if our string doesn't match one of the available qualities the
   # command will fail (i.e. "720p60" instead of "720p"). Checking every time would be too much overhead, so
-  # we just append "best" as a fallback. Eh oh.
+  # we just append "best" as fallback. Eh oh.
   quality = filter(None, [stream.quality or cfg.default_quality, 'best'])
   # Build final command list
   command = ['streamlink']

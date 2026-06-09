@@ -51,6 +51,49 @@ def test_streamlistmodel_checkstate_toggle(app, tmp_path):
     assert after is False or after is None
 
 
+def test_streamlistmodel_timestamp_columns(app, tmp_path):
+    from streamcondor.model import Configuration, Stream
+    from streamcondor.ui.settings import StreamListModel
+    from PyQt6.QtCore import Qt
+
+    cfg_path = write_tmp_config(tmp_path)
+    cfg = Configuration(Path(cfg_path))
+    cfg.state_path = tmp_path / 'state.json'
+    cfg.load_state()
+
+    s = Stream(url='https://x', name='X', type='youtube', notify=True)
+    cfg.set_stream(s)
+    cfg.mark_stream_online(s.url)
+    cfg.mark_stream_watched(s.url)
+
+    model = StreamListModel(cfg)
+    assert model.columnCount() == 5
+    assert model.headerData(3, Qt.Orientation.Horizontal, Qt.ItemDataRole.DisplayRole) == 'Last online'
+    assert model.headerData(4, Qt.Orientation.Horizontal, Qt.ItemDataRole.DisplayRole) == 'Last watched'
+
+    stream_idx = None
+    for gi in range(model.rowCount()):
+        gidx = model.index(gi, 0)
+        for ci in range(model.rowCount(gidx)):
+            cidx = model.index(ci, 0, gidx)
+            if model.data(cidx, Qt.ItemDataRole.DisplayRole) == s.name:
+                stream_idx = cidx
+                break
+        if stream_idx:
+            break
+    assert stream_idx is not None
+
+    online_text = model.data(model.index(stream_idx.row(), 3, stream_idx.parent()), Qt.ItemDataRole.DisplayRole)
+    watched_text = model.data(model.index(stream_idx.row(), 4, stream_idx.parent()), Qt.ItemDataRole.DisplayRole)
+    assert online_text
+    assert watched_text
+
+    online_tooltip = model.data(model.index(stream_idx.row(), 3, stream_idx.parent()), Qt.ItemDataRole.ToolTipRole)
+    watched_tooltip = model.data(model.index(stream_idx.row(), 4, stream_idx.parent()), Qt.ItemDataRole.ToolTipRole)
+    assert online_tooltip
+    assert watched_tooltip
+
+
 def test_add_edit_clone_delete_flows(app, tmp_path):
     from streamcondor.model import Configuration, Stream
     from streamcondor.ui.settings import SettingsWindow

@@ -61,5 +61,40 @@ class TestConfigurationMore(unittest.TestCase):
         # name should be converted to None by validator
         self.assertIsNone(s.name)
 
+    def test_stream_state_tracking(self):
+        cfg_data = {
+            'autostart_monitoring': False,
+            'check_interval_mins': 60,
+            'default_notify': False,
+            'default_streamlink_args': '',
+            'default_quality': 'best',
+            'default_player': '',
+            'default_player_args': '',
+            'tray_icon_color': TrayIconColor.WHITE.value,
+            'tray_icon_action': TrayIconAction.NOTHING.value,
+            'streams': {}
+        }
+        cfg_path = Path('test_tmp_cfg_state.json')
+        state_path = Path('test_tmp_state.json')
+        cfg_path.write_text(json.dumps(cfg_data))
+        try:
+            cfg = Configuration(cfg_path)
+            cfg.state_path = state_path
+            cfg.load_state()
+            cfg.mark_stream_online('https://x/')
+            cfg.mark_stream_watched('https://x/')
+            self.assertIsNotNone(cfg.get_stream_last_online_ts('https://x/'))
+            self.assertIsNotNone(cfg.get_stream_last_watched_ts('https://x/'))
+            self.assertTrue(state_path.exists())
+        finally:
+            try:
+                cfg_path.unlink()
+            except Exception:
+                pass
+            try:
+                state_path.unlink()
+            except Exception:
+                pass
+
 if __name__ == '__main__':
     unittest.main()

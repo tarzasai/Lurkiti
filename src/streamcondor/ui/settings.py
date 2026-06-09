@@ -1,4 +1,6 @@
 import logging
+import time
+from datetime import datetime
 from PyQt6.QtWidgets import (
   QWidget, QFormLayout, QVBoxLayout, QHBoxLayout, QTabWidget, QTreeView, QPushButton,
   QLabel, QSpinBox, QCheckBox, QComboBox, QLineEdit, QTextEdit, QSizePolicy,
@@ -21,6 +23,34 @@ except PackageNotFoundError:
   dist_ver = getattr(streamcondor, '__version__', 'dev')
 
 log = logging.getLogger(__name__)
+
+
+def _format_relative_time(timestamp: float | None) -> str:
+  if timestamp is None:
+    return ''
+  delta_seconds = max(0, int(time.time() - timestamp))
+  if delta_seconds < 60:
+    return 'just now'
+  if delta_seconds < 3600:
+    minutes = delta_seconds // 60
+    return f'{minutes} minute ago' if minutes == 1 else f'{minutes} minutes ago'
+  if delta_seconds < 86400:
+    hours = delta_seconds // 3600
+    return f'{hours} hour ago' if hours == 1 else f'{hours} hours ago'
+  if delta_seconds < 2592000:
+    days = delta_seconds // 86400
+    return f'{days} day ago' if days == 1 else f'{days} days ago'
+  if delta_seconds < 31536000:
+    months = delta_seconds // 2592000
+    return f'{months} month ago' if months == 1 else f'{months} months ago'
+  years = delta_seconds // 31536000
+  return f'{years} year ago' if years == 1 else f'{years} years ago'
+
+
+def _format_absolute_time(timestamp: float | None) -> str:
+  if timestamp is None:
+    return 'Never'
+  return datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
 
 
 class StreamTreeNode:
@@ -123,7 +153,7 @@ class StreamListModel(QAbstractItemModel):
     return parent_node.child_count()
 
   def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
-    return 3  # Name (with checkbox/icon), Quality, Player
+    return 5  # Name (with checkbox/icon), Quality, Player, Last online, Last watched
 
   def headerData(self, section: int, orientation, role: int):
     if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
@@ -133,6 +163,10 @@ class StreamListModel(QAbstractItemModel):
         return 'Pref. quality'
       elif section == 2:
         return 'Player'
+      elif section == 3:
+        return 'Last online'
+      elif section == 4:
+        return 'Last watched'
     return None
 
   def data(self, index: QModelIndex, role: int):
@@ -151,6 +185,17 @@ class StreamListModel(QAbstractItemModel):
           return stream.quality or self.cfg.default_quality
         if column == 2:
           return stream.player or self.cfg.default_player
+        if column == 3:
+          return _format_relative_time(self.cfg.get_stream_last_online_ts(stream.url))
+        if column == 4:
+          return _format_relative_time(self.cfg.get_stream_last_watched_ts(stream.url))
+      return None
+    if role == Qt.ItemDataRole.ToolTipRole and node.is_stream():
+      stream = node.data
+      if column == 3:
+        return _format_absolute_time(self.cfg.get_stream_last_online_ts(stream.url))
+      if column == 4:
+        return _format_absolute_time(self.cfg.get_stream_last_watched_ts(stream.url))
       return None
     if role == Qt.ItemDataRole.DecorationRole and column == 0:
       if node.is_group():
@@ -239,6 +284,7 @@ class SettingsWindow(QWidget):
     layout = QHBoxLayout()
     # Stream list
     self.stream_model = StreamListModel(self.cfg)
+    self.cfg.state_changed.connect(self._reload_treeview)
     self.stream_list = QTreeView()
     self.stream_list.setModel(self.stream_model)
     self.stream_list.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
@@ -253,6 +299,8 @@ class SettingsWindow(QWidget):
     self.stream_list.header().resizeSection(0, 300)  # Name column
     self.stream_list.header().resizeSection(1, 100)  # Quality column
     self.stream_list.header().resizeSection(2, 100)  # Player column
+    self.stream_list.header().resizeSection(3, 130)  # Last online column
+    self.stream_list.header().resizeSection(4, 130)  # Last watched column
     self.stream_list.selectionModel().selectionChanged.connect(self._on_stream_selected)
     layout.addWidget(self.stream_list)
     # Buttons on the right side
@@ -264,10 +312,10 @@ class SettingsWindow(QWidget):
     self.btn_clone.clicked.connect(self._clone_stream)
     self.btn_delete = QPushButton('Delete')
     self.btn_delete.clicked.connect(self._delete_stream)
-    self.btn_run_defp = QPushButton('Launch\ndefault')
+    self.btn_run_defp = QPushButton('Launch w/\ndefault\nplayer')
     self.btn_run_defp.setToolTip('Launch stream with default media player')
     self.btn_run_defp.clicked.connect(self._launch_stream_default_player)
-    self.btn_run_altp = QPushButton('Launch\naltern.')
+    self.btn_run_altp = QPushButton('Launch w/\nalternate\nplayer')
     self.btn_run_altp.setToolTip('Launch stream with alternate media player')
     self.btn_run_altp.clicked.connect(self._launch_stream_alternate_player)
     btn_box = QVBoxLayout()
@@ -587,6 +635,7 @@ class SettingsWindow(QWidget):
     node = self.stream_model.getData(index)
     if not node or node.is_group():
       return
+    self.cfg.mark_stream_watched(node.data.url)
     launch_process(build_sl_command(self.cfg, node.data))
 
   def _launch_stream_alternate_player(self) -> None:
@@ -596,6 +645,7 @@ class SettingsWindow(QWidget):
     node = self.stream_model.getData(index)
     if not node or node.is_group():
       return
+    self.cfg.mark_stream_watched(node.data.url)
     launch_process(build_sl_command(self.cfg, node.data, True))
 
   def _default_player_changed(self, text: str) -> None:

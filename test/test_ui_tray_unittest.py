@@ -32,8 +32,10 @@ class TestUITray(unittest.TestCase):
         # ensure string attributes so build_sl_command can do replacements
         s.name = 'mock'
         s.type = ''
-        s.args = ''
+        s.quality = 'best'
+        s.player = ''
         s.sl_args = ''
+        s.mp_args = ''
         ti._launch_stream(s)
         mock_launch.assert_called()
         # Clean up monitor thread to avoid crashes on teardown

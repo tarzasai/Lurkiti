@@ -77,6 +77,7 @@ def test_tray_toggle_and_notifications(qtbot, tmp_path, monkeypatch):
 
     # Simulate an online stream signal and ensure showMessage is called when notify True
     s = MagicMock()
+    s.url = 'https://x'
     s.name = 'X'
     s.type = 't'
     s.notify = True

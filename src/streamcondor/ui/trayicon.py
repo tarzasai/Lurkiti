@@ -141,6 +141,7 @@ class TrayIcon(QSystemTrayIcon):
     self.setToolTip('\n'.join(tooltip))
 
   def _launch_stream(self, stream: Stream) -> None:
+    self.cfg.mark_stream_watched(stream.url)
     launch_process(build_sl_command(self.cfg, stream))
 
   def _on_tray_action(self, reason: QSystemTrayIcon.ActivationReason) -> None:
@@ -156,6 +157,7 @@ class TrayIcon(QSystemTrayIcon):
       self._toggle_notifications()
 
   def _on_stream_online(self, stream: Stream) -> None:
+    self.cfg.mark_stream_online(stream.url)
     self._update_icon()
     if self.notify and (stream.notify is None or stream.notify) and self.supportsMessages():
       self.showMessage(

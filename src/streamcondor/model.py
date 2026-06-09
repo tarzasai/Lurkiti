@@ -1,8 +1,9 @@
 import json
+import time
 from enum import Enum
 from pathlib import Path
 from pydantic import BaseModel, Field, field_validator
-from PyQt6.QtCore import QObject, pyqtSignal
+from PyQt6.QtCore import QObject, pyqtSignal, QStandardPaths
 
 
 class TrayIconColor(Enum):
@@ -90,23 +91,55 @@ class ConfigModel(BaseModelWithEmptyToNone):
   plugin_auth_args: list[str] | None = Field(default=DEFAULT_PLUGIN_AUTH_ARGS, description="List of required plugin arguments to check")
 
 
+class StreamState(BaseModel):
+  last_online_ts: float | None = Field(default=None, description='Last time stream was seen online (unix timestamp)')
+  last_watched_ts: float | None = Field(default=None, description='Last time stream was launched/watched (unix timestamp)')
+
+
+class StateModel(BaseModel):
+  streams: dict[str, StreamState] = Field(default_factory=dict, description='Per-stream runtime state')
+
+
 class Configuration(QObject):
   config_changed = pyqtSignal()
+  state_changed = pyqtSignal()
 
   def __init__(self, config_path: Path):
     super().__init__()
     self.config_path = config_path
+    self.state_path = self._resolve_state_path()
     self._cfg: ConfigModel = ConfigModel()
+    self._state: StateModel = StateModel()
     self.load()
+    self.load_state()
+
+  def _resolve_state_path(self) -> Path:
+    state_dir = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.StateLocation))
+    if str(state_dir) == '.':
+      state_dir = self.config_path.parent / '.state'
+    return state_dir / 'StreamCondor.state.json'
 
   def load(self) -> None:
     with open(self.config_path, 'r', encoding='utf-8') as f:
       self._cfg = ConfigModel(**json.load(f))
 
+  def load_state(self) -> None:
+    if not self.state_path.exists():
+      self._state = StateModel()
+      return
+    with open(self.state_path, 'r', encoding='utf-8') as f:
+      self._state = StateModel(**json.load(f))
+
   def save(self) -> None:
     with open(self.config_path, 'w', encoding='utf-8') as f:
       json.dump(self._cfg.model_dump(mode='json', exclude_none=True), f, indent=2, ensure_ascii=False)
     self.config_changed.emit()
+
+  def save_state(self) -> None:
+    self.state_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(self.state_path, 'w', encoding='utf-8') as f:
+      json.dump(self._state.model_dump(mode='json', exclude_none=True), f, indent=2, ensure_ascii=False)
+    self.state_changed.emit()
 
   def set(self, key: str, value) -> None:
     if value == getattr(self._cfg, key):
@@ -225,6 +258,33 @@ class Configuration(QObject):
       new_streams = self._cfg.streams.copy()
       del new_streams[stream.url]
       self.set('streams', new_streams)
+    if stream.url in self._state.streams:
+      new_states = self._state.streams.copy()
+      del new_states[stream.url]
+      self._state = StateModel(streams=new_states)
+      self.save_state()
+
+  def _mark_stream_timestamp(self, url: str, key: str) -> None:
+    new_states = self._state.streams.copy()
+    stream_state = new_states.get(url, StreamState())
+    setattr(stream_state, key, time.time())
+    new_states[url] = stream_state
+    self._state = StateModel(streams=new_states)
+    self.save_state()
+
+  def mark_stream_online(self, url: str) -> None:
+    self._mark_stream_timestamp(url, 'last_online_ts')
+
+  def mark_stream_watched(self, url: str) -> None:
+    self._mark_stream_timestamp(url, 'last_watched_ts')
+
+  def get_stream_last_online_ts(self, url: str) -> float | None:
+    stream_state = self._state.streams.get(url)
+    return None if stream_state is None else stream_state.last_online_ts
+
+  def get_stream_last_watched_ts(self, url: str) -> float | None:
+    stream_state = self._state.streams.get(url)
+    return None if stream_state is None else stream_state.last_watched_ts
 
   def get_geometry(self, window_name: str) -> Geometry | None:
     return self._cfg.windows.get(window_name)
