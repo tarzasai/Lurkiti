@@ -78,16 +78,22 @@ class TrayIcon(QSystemTrayIcon):
       action.setData(stream)
       action.triggered.connect(lambda checked, s=stream: self._launch_stream(s))
       return action
+    def add_stream_actions(streams: list[Stream], menu: QMenu) -> None:
+      for stream in streams:
+        menu.addAction(create_stream_action(stream))
     # add alive streams
     alive_streams = self.monitor.get_alive_streams()
-    for stream in alive_streams:
-      self.menu.addAction(create_stream_action(stream))
+    add_stream_actions(alive_streams, self.menu)
     if len(alive_streams) > 0:
       self.menu.addSeparator()
     # add always on streams
     perma_streams = self.monitor.get_perma_streams()
-    for stream in perma_streams:
-      self.menu.addAction(create_stream_action(stream))
+    if len(alive_streams) > 10 and len(perma_streams) > 0:
+      perma_menu = self.menu.addMenu('Always Live')
+      perma_menu.setIcon(QIcon.fromTheme('network-wireless', QIcon.fromTheme('network-transmit-receive')))
+      add_stream_actions(perma_streams, perma_menu)
+    else:
+      add_stream_actions(perma_streams, self.menu)
     if len(perma_streams) > 0:
       self.menu.addSeparator()
     # add toggle monitoring
@@ -102,16 +108,6 @@ class TrayIcon(QSystemTrayIcon):
     if self.notify:
       toggle_notifications.setIcon(self.icon_checked)
     self.menu.addAction(toggle_notifications)
-    # add click action toggle submenu
-    def set_tray_action(action: TrayIconAction) -> None:
-      self.click = action
-    tray_click_menu = self.menu.addMenu('Click Action')
-    for tray_action in TrayIconAction:
-      action = QAction(tray_action.display_name, tray_click_menu)
-      action.triggered.connect(lambda checked, ta=tray_action: set_tray_action(ta))
-      if tray_action == self.click:
-        action.setIcon(self.icon_checked)
-      tray_click_menu.addAction(action)
     # Settings
     self.menu.addSeparator()
     action_settings = QAction('Settings', self.menu)

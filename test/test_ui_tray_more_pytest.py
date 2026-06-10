@@ -79,6 +79,36 @@ def test_update_menu_with_favicons(app, tmp_path):
             ti._update_menu()
             texts = [a.text() for a in ti.menu.actions() if a.text()]
             assert 'A' in texts and 'B' in texts
+            assert 'Click Action' not in texts
+        finally:
+            ti.monitor.stop(); ti.monitor.wait(); ti.monitor.quit()
+
+
+def test_update_menu_moves_perma_streams_to_submenu_when_busy(app, tmp_path):
+    from streamcondor.model import Configuration, Stream
+    from streamcondor.ui.trayicon import TrayIcon
+
+    cfg_path = write_tmp_config(tmp_path)
+    cfg = Configuration(Path(cfg_path))
+    with patch('streamcondor.ui.trayicon.get_stream_icon') as mock_fav:
+        pix = QPixmap(16, 16)
+        pix.fill()
+        mock_fav.return_value = pix
+        ti = TrayIcon(None, str(cfg.config_path))
+        try:
+            alive_streams = [Stream(url=f'https://live-{i}', name=f'Live {i}', type='youtube') for i in range(11)]
+            perma_streams = [Stream(url='https://always', name='Always', type='youtube', always_on=True)]
+            ti.monitor.get_alive_streams = MagicMock(return_value=alive_streams)
+            ti.monitor.get_perma_streams = MagicMock(return_value=perma_streams)
+            ti._update_menu()
+
+            action_texts = [a.text() for a in ti.menu.actions() if a.text()]
+            assert 'Always Live' in action_texts
+
+            submenu_action = next(a for a in ti.menu.actions() if a.text() == 'Always Live')
+            assert submenu_action.menu() is not None
+            assert [a.text() for a in submenu_action.menu().actions() if a.text()] == ['Always']
+            assert not submenu_action.icon().isNull()
         finally:
             ti.monitor.stop(); ti.monitor.wait(); ti.monitor.quit()
 

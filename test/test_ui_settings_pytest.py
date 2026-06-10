@@ -32,6 +32,23 @@ def test_settings_toggle_notify_changes_icon(app, tmp_path):
     assert win.cfg.default_notify != orig
     # cleanup
     win.close()
+
+
+def test_settings_exposes_tray_click_action_selector(app, tmp_path):
+    from streamcondor.model import Configuration, TrayIconAction
+    from streamcondor.ui.settings import SettingsWindow
+
+    cfg_path = write_tmp_config(tmp_path)
+    cfg = Configuration(Path(cfg_path))
+    win = SettingsWindow(cfg)
+    try:
+        actions = [win.combo_tray_icon_action.itemData(i) for i in range(win.combo_tray_icon_action.count())]
+        assert actions == list(TrayIconAction)
+
+        win.combo_tray_icon_action.setCurrentIndex(actions.index(TrayIconAction.OPEN_CONFIG))
+        assert cfg.tray_icon_action == TrayIconAction.OPEN_CONFIG
+    finally:
+        win.close()
 import pytest
 import tempfile
 import json
