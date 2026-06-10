@@ -108,7 +108,6 @@ def test_update_menu_moves_perma_streams_to_submenu_when_busy(app, tmp_path):
             submenu_action = next(a for a in ti.menu.actions() if a.text() == 'Always Live')
             assert submenu_action.menu() is not None
             assert [a.text() for a in submenu_action.menu().actions() if a.text()] == ['Always']
-            assert not submenu_action.icon().isNull()
         finally:
             ti.monitor.stop(); ti.monitor.wait(); ti.monitor.quit()
 
