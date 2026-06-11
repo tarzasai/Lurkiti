@@ -56,6 +56,7 @@ from pathlib import Path
 from streamcondor.model import Stream
 
 from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QToolButton
 
 
 def _make_cfg(tmp_path):
@@ -99,3 +100,31 @@ def test_settings_load_and_toggle_stream_notify(qtbot, tmp_path, monkeypatch):
     monkeypatch.setattr(cfg, 'save', fake_save)
     assert model.setData(index_stream, None, Qt.ItemDataRole.CheckStateRole)
     assert saved['called']
+
+
+def test_stream_action_toolbutton_click_keeps_selection(qtbot, tmp_path):
+    cfg = _make_cfg(tmp_path)
+    from streamcondor.ui.settings import SettingsWindow
+    from unittest.mock import patch
+
+    win = SettingsWindow(cfg)
+    qtbot.addWidget(win)
+    win.show()
+
+    model = win.stream_model
+    index_group = model.index(0, 0)
+    index_stream = model.index(0, 0, index_group)
+    assert index_stream.isValid()
+
+    win.stream_list.setCurrentIndex(index_stream)
+    selection_model = win.stream_list.selectionModel()
+    assert len(selection_model.selectedRows()) == 1
+    assert isinstance(win.btn_edit, QToolButton)
+    assert win.btn_edit.focusPolicy() == Qt.FocusPolicy.NoFocus
+
+    with patch('streamcondor.ui.settings.StreamDialog') as mock_dialog:
+        mock_dialog.return_value.exec.return_value = False
+        qtbot.mouseClick(win.btn_edit, Qt.MouseButton.LeftButton)
+
+    assert len(selection_model.selectedRows()) == 1
+    assert selection_model.currentIndex() == index_stream

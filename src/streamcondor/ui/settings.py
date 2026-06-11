@@ -2,7 +2,7 @@ import logging
 import time
 from datetime import datetime
 from PyQt6.QtWidgets import (
-  QWidget, QFormLayout, QVBoxLayout, QHBoxLayout, QTabWidget, QTreeView, QPushButton,
+  QWidget, QFormLayout, QVBoxLayout, QHBoxLayout, QTabWidget, QTreeView, QPushButton, QToolButton,
   QLabel, QSpinBox, QCheckBox, QComboBox, QLineEdit, QTextEdit, QSizePolicy,
   QMessageBox, QAbstractItemView
 )
@@ -23,6 +23,28 @@ except PackageNotFoundError:
   dist_ver = getattr(streamcondor, '__version__', 'dev')
 
 log = logging.getLogger(__name__)
+
+
+def _create_stream_action_button(
+  label: str,
+  handler,
+  *,
+  tooltip: str | None = None,
+  fixed_width: int | None = None,
+  fixed_height: int | None = None,
+) -> QToolButton:
+  button = QToolButton()
+  button.setText(label)
+  button.setAutoRaise(False)
+  button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+  button.clicked.connect(handler)
+  if tooltip is not None:
+    button.setToolTip(tooltip)
+  if fixed_width is not None:
+    button.setFixedWidth(fixed_width)
+  if fixed_height is not None:
+    button.setFixedHeight(fixed_height)
+  return button
 
 
 def _format_relative_time(timestamp: float | None) -> str:
@@ -304,20 +326,42 @@ class SettingsWindow(QWidget):
     self.stream_list.selectionModel().selectionChanged.connect(self._on_stream_selected)
     layout.addWidget(self.stream_list)
     # Buttons on the right side
-    self.btn_add = QPushButton('Add')
-    self.btn_add.clicked.connect(self._add_stream)
-    self.btn_edit = QPushButton('Edit')
-    self.btn_edit.clicked.connect(self._edit_stream)
-    self.btn_clone = QPushButton('Clone')
-    self.btn_clone.clicked.connect(self._clone_stream)
-    self.btn_delete = QPushButton('Delete')
-    self.btn_delete.clicked.connect(self._delete_stream)
-    self.btn_run_defp = QPushButton('Launch w/\ndefault\nplayer')
-    self.btn_run_defp.setToolTip('Launch stream with default media player')
-    self.btn_run_defp.clicked.connect(self._launch_stream_default_player)
-    self.btn_run_altp = QPushButton('Launch w/\nalternate\nplayer')
-    self.btn_run_altp.setToolTip('Launch stream with alternate media player')
-    self.btn_run_altp.clicked.connect(self._launch_stream_alternate_player)
+    self.btn_add = _create_stream_action_button(
+      'Add',
+      self._add_stream,
+      fixed_width=80,
+      fixed_height=30,
+    )
+    self.btn_edit = _create_stream_action_button(
+      'Edit',
+      self._edit_stream,
+      fixed_width=80,
+      fixed_height=30,
+    )
+    self.btn_clone = _create_stream_action_button(
+      'Clone',
+      self._clone_stream,
+      fixed_width=80,
+      fixed_height=30,
+    )
+    self.btn_delete = _create_stream_action_button(
+      'Delete',
+      self._delete_stream,
+      fixed_width=80,
+      fixed_height=30,
+    )
+    self.btn_run_defp = _create_stream_action_button(
+      'Launch\ndefault\nplayer',
+      self._launch_stream_default_player,
+      tooltip='Launch stream with default media player',
+      fixed_width=80,
+    )
+    self.btn_run_altp = _create_stream_action_button(
+      'Launch\nalternate\nplayer',
+      self._launch_stream_alternate_player,
+      tooltip='Launch stream with alternate media player',
+      fixed_width=80,
+    )
     btn_box = QVBoxLayout()
     btn_box.addWidget(self.btn_add)
     btn_box.addWidget(self.btn_edit)

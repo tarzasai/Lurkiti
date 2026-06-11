@@ -3,7 +3,7 @@ import platform
 import shlex
 from PyQt6.QtWidgets import (
   QDialog, QVBoxLayout, QHBoxLayout, QTabWidget, QLabel, QLineEdit, QDialogButtonBox, QFormLayout,
-  QCheckBox, QTextEdit, QPushButton, QWidget, QApplication
+  QCheckBox, QTextEdit, QPushButton, QToolButton, QWidget, QApplication
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont, QIcon
@@ -104,9 +104,31 @@ class StreamDialog(QDialog):
     # Media player
     self.text_player = QLineEdit()
     self.text_player.setPlaceholderText('Leave blank for default')
+    self.clear_player = QToolButton()
+    self.clear_player.setIcon(QIcon.fromTheme("edit-clear"))
+    self.clear_player.setToolTip('Clear custom media player')
+    self.clear_player.clicked.connect(lambda: self.text_player.clear())
+    player_box = QHBoxLayout()
+    player_box.addWidget(self.text_player)
+    player_box.addWidget(self.clear_player)
     # Preferred quality
+    self.best_quality = QToolButton()
+    self.best_quality.setText('Best')
+    self.worst_quality = QToolButton()
+    self.worst_quality.setText('Worst')
+    self.clear_quality = QToolButton()
+    self.clear_quality.setToolTip('Clear preferred quality')
+    self.clear_quality.setIcon(QIcon.fromTheme("edit-clear"))
     self.text_quality = QLineEdit()
-    self.text_quality.setPlaceholderText('e.g., best, 720p (leave blank for default)')
+    self.text_quality.setPlaceholderText('e.g. 1080p, 720p (leave blank for default)')
+    self.best_quality.clicked.connect(lambda: self.text_quality.setText('best'))
+    self.worst_quality.clicked.connect(lambda: self.text_quality.setText('worst'))
+    self.clear_quality.clicked.connect(lambda: self.text_quality.clear())
+    quality_box = QHBoxLayout()
+    quality_box.addWidget(self.best_quality)
+    quality_box.addWidget(self.worst_quality)
+    quality_box.addWidget(self.text_quality)
+    quality_box.addWidget(self.clear_quality)
     # Notify toggle
     self.check_notify = QCheckBox()
     self.check_notify.stateChanged.connect(self._update_notify_descr)
@@ -122,8 +144,8 @@ class StreamDialog(QDialog):
     form_layout.addRow('Stream URL', url_box)
     form_layout.addRow('Stream type', self.text_type)
     form_layout.addRow('Display name', self.text_name)
-    form_layout.addRow('Media player', self.text_player)
-    form_layout.addRow('Preferred quality', self.text_quality)
+    form_layout.addRow('Media player', player_box)
+    form_layout.addRow('Preferred quality', quality_box)
     form_layout.addRow('Notify when live', self.check_notify)
     form_layout.addRow('Always streaming', self.check_always_on)
     widget = QWidget()
@@ -153,8 +175,12 @@ class StreamDialog(QDialog):
     return widget
 
   def _create_preview_tab(self) -> QWidget:
-    top_label = QLabel('This is the command that will be executed to launch the stream:')
+    top_label = QLabel(
+      'Stream Condor merges default and stream-specific options '
+      'and executes this command to open the stream.'
+    )
     top_label.setStyleSheet('font-size: 10pt;')
+    top_label.setWordWrap(True)
     self.text_preview = QTextEdit()
     self.text_preview.setReadOnly(True)
     self.text_preview.setFont(MONOSPACE_FONT)
