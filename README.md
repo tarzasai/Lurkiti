@@ -1,5 +1,5 @@
 # StreamCondor 🦅
-*Monitor → Click → Watch. No browser, no bullshit.* [→ screenshots](#screenshots)
+*Monitor → Click → Watch. No browser, no bullshit.* [→ screenshots on GitHub](https://github.com/tarzasai/StreamCondor#screenshots)
 
 StreamCondor is a lightweight system-tray app that monitors livestreams and opens them with [Streamlink](https://streamlink.github.io/).
 
@@ -155,9 +155,9 @@ This is only relevant for KDE/KWin users.
 
 ## Screenshots
 
-![System Tray menu](./media/tray.png)
-![Streams Settings window](./media/settings1.png)
-![App Settings window](./media/settings2.png)
-![Stream Setting window](./media/stream1.png)
-![Stream Setting window](./media/stream2.png)
-![Stream Setting window](./media/stream3.png)
+![System Tray menu](https://raw.githubusercontent.com/tarzasai/StreamCondor/main/media/tray.png)
+![Streams Settings window](https://raw.githubusercontent.com/tarzasai/StreamCondor/main/media/settings1.png)
+![App Settings window](https://raw.githubusercontent.com/tarzasai/StreamCondor/main/media/settings2.png)
+![Stream Setting window](https://raw.githubusercontent.com/tarzasai/StreamCondor/main/media/stream1.png)
+![Stream Setting window](https://raw.githubusercontent.com/tarzasai/StreamCondor/main/media/stream2.png)
+![Stream Setting window](https://raw.githubusercontent.com/tarzasai/StreamCondor/main/media/stream3.png)
