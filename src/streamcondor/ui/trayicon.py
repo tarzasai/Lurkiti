@@ -209,6 +209,7 @@ class TrayIcon(QSystemTrayIcon):
     QApplication.quit()
 
   def _on_stream_offline(self, stream: Stream) -> None:
+    self.cfg.mark_stream_offline(stream.url)
     self._update_icon()
 
 

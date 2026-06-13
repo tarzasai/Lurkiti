@@ -67,9 +67,10 @@ def test_streamlistmodel_timestamp_columns(app, tmp_path):
     cfg.mark_stream_watched(s.url)
 
     model = StreamListModel(cfg)
-    assert model.columnCount() == 5
-    assert model.headerData(3, Qt.Orientation.Horizontal, Qt.ItemDataRole.DisplayRole) == 'Last online'
-    assert model.headerData(4, Qt.Orientation.Horizontal, Qt.ItemDataRole.DisplayRole) == 'Last watched'
+    assert model.columnCount() == 6
+    assert model.headerData(3, Qt.Orientation.Horizontal, Qt.ItemDataRole.DisplayRole) == 'Online'
+    assert model.headerData(4, Qt.Orientation.Horizontal, Qt.ItemDataRole.DisplayRole) == 'Last online'
+    assert model.headerData(5, Qt.Orientation.Horizontal, Qt.ItemDataRole.DisplayRole) == 'Last watched'
 
     stream_idx = None
     for gi in range(model.rowCount()):
@@ -83,13 +84,26 @@ def test_streamlistmodel_timestamp_columns(app, tmp_path):
             break
     assert stream_idx is not None
 
-    online_text = model.data(model.index(stream_idx.row(), 3, stream_idx.parent()), Qt.ItemDataRole.DisplayRole)
-    watched_text = model.data(model.index(stream_idx.row(), 4, stream_idx.parent()), Qt.ItemDataRole.DisplayRole)
+    online_text = model.data(model.index(stream_idx.row(), 4, stream_idx.parent()), Qt.ItemDataRole.DisplayRole)
+    watched_text = model.data(model.index(stream_idx.row(), 5, stream_idx.parent()), Qt.ItemDataRole.DisplayRole)
     assert online_text
     assert watched_text
 
-    online_tooltip = model.data(model.index(stream_idx.row(), 3, stream_idx.parent()), Qt.ItemDataRole.ToolTipRole)
-    watched_tooltip = model.data(model.index(stream_idx.row(), 4, stream_idx.parent()), Qt.ItemDataRole.ToolTipRole)
+    status_tooltip = model.data(model.index(stream_idx.row(), 3, stream_idx.parent()), Qt.ItemDataRole.ToolTipRole)
+    assert status_tooltip == 'Online now'
+
+    status_mark = model.data(model.index(stream_idx.row(), 3, stream_idx.parent()), Qt.ItemDataRole.DisplayRole)
+    assert status_mark == '✓'
+
+    cfg.mark_stream_offline(s.url)
+    offline_tooltip = model.data(model.index(stream_idx.row(), 3, stream_idx.parent()), Qt.ItemDataRole.ToolTipRole)
+    assert offline_tooltip == 'Offline'
+
+    offline_mark = model.data(model.index(stream_idx.row(), 3, stream_idx.parent()), Qt.ItemDataRole.DisplayRole)
+    assert offline_mark == ''
+
+    online_tooltip = model.data(model.index(stream_idx.row(), 4, stream_idx.parent()), Qt.ItemDataRole.ToolTipRole)
+    watched_tooltip = model.data(model.index(stream_idx.row(), 5, stream_idx.parent()), Qt.ItemDataRole.ToolTipRole)
     assert online_tooltip
     assert watched_tooltip
 

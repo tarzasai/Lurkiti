@@ -92,6 +92,7 @@ class ConfigModel(BaseModelWithEmptyToNone):
 
 
 class StreamState(BaseModel):
+  is_online: bool = Field(default=False, description='Whether stream is currently online')
   last_online_ts: float | None = Field(default=None, description='Last time stream was seen online (unix timestamp)')
   last_watched_ts: float | None = Field(default=None, description='Last time stream was launched/watched (unix timestamp)')
 
@@ -264,19 +265,30 @@ class Configuration(QObject):
       self._state = StateModel(streams=new_states)
       self.save_state()
 
-  def _mark_stream_timestamp(self, url: str, key: str) -> None:
+  def _update_stream_state(self, url: str, **updates) -> None:
     new_states = self._state.streams.copy()
     stream_state = new_states.get(url, StreamState())
-    setattr(stream_state, key, time.time())
+    for key, value in updates.items():
+      setattr(stream_state, key, value)
     new_states[url] = stream_state
     self._state = StateModel(streams=new_states)
     self.save_state()
 
   def mark_stream_online(self, url: str) -> None:
-    self._mark_stream_timestamp(url, 'last_online_ts')
+    self._update_stream_state(url, is_online=True, last_online_ts=time.time())
+
+  def mark_stream_offline(self, url: str) -> None:
+    self._update_stream_state(url, is_online=False)
 
   def mark_stream_watched(self, url: str) -> None:
-    self._mark_stream_timestamp(url, 'last_watched_ts')
+    self._update_stream_state(url, last_watched_ts=time.time())
+
+  def is_stream_online(self, url: str) -> bool:
+    stream = self._cfg.streams.get(url)
+    if stream is not None and stream.always_on:
+      return True
+    stream_state = self._state.streams.get(url)
+    return False if stream_state is None else stream_state.is_online
 
   def get_stream_last_online_ts(self, url: str) -> float | None:
     stream_state = self._state.streams.get(url)

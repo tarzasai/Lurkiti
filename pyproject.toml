@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "streamcondor"
 dynamic = ["version"]
-description = "A system tray application for monitoring livestreams status"
+description = "System tray app that monitors livestreams and launches them in your favorite player via Streamlink."
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
@@ -18,9 +18,12 @@ keywords = ["stream", "tray", "monitor", "pyqt6"]
 classifiers = [
 	"Development Status :: 4 - Beta",
 	"Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
 	"Programming Language :: Python :: 3",
 	"Programming Language :: Python :: 3.12",
 	"Operating System :: OS Independent",
+    "Topic :: Multimedia :: Video",
+    "Topic :: Utilities",
 ]
 
 dependencies = [

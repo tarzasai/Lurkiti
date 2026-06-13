@@ -175,7 +175,7 @@ class StreamListModel(QAbstractItemModel):
     return parent_node.child_count()
 
   def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
-    return 5  # Name (with checkbox/icon), Quality, Player, Last online, Last watched
+    return 6  # Name (with checkbox/icon), Quality, Player, Online, Last online, Last watched
 
   def headerData(self, section: int, orientation, role: int):
     if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
@@ -186,8 +186,10 @@ class StreamListModel(QAbstractItemModel):
       elif section == 2:
         return 'Player'
       elif section == 3:
-        return 'Last online'
+        return 'Online'
       elif section == 4:
+        return 'Last online'
+      elif section == 5:
         return 'Last watched'
     return None
 
@@ -208,17 +210,23 @@ class StreamListModel(QAbstractItemModel):
         if column == 2:
           return stream.player or self.cfg.default_player
         if column == 3:
-          return _format_relative_time(self.cfg.get_stream_last_online_ts(stream.url))
+          return '✓' if self.cfg.is_stream_online(stream.url) else ''
         if column == 4:
+          return _format_relative_time(self.cfg.get_stream_last_online_ts(stream.url))
+        if column == 5:
           return _format_relative_time(self.cfg.get_stream_last_watched_ts(stream.url))
       return None
     if role == Qt.ItemDataRole.ToolTipRole and node.is_stream():
       stream = node.data
       if column == 3:
-        return _format_absolute_time(self.cfg.get_stream_last_online_ts(stream.url))
+        return 'Online now' if self.cfg.is_stream_online(stream.url) else 'Offline'
       if column == 4:
+        return _format_absolute_time(self.cfg.get_stream_last_online_ts(stream.url))
+      if column == 5:
         return _format_absolute_time(self.cfg.get_stream_last_watched_ts(stream.url))
       return None
+    if role == Qt.ItemDataRole.TextAlignmentRole and column == 3:
+      return Qt.AlignmentFlag.AlignCenter
     if role == Qt.ItemDataRole.DecorationRole and column == 0:
       if node.is_group():
         stream = node.children[0].data
@@ -321,8 +329,9 @@ class SettingsWindow(QWidget):
     self.stream_list.header().resizeSection(0, 300)  # Name column
     self.stream_list.header().resizeSection(1, 100)  # Quality column
     self.stream_list.header().resizeSection(2, 100)  # Player column
-    self.stream_list.header().resizeSection(3, 130)  # Last online column
-    self.stream_list.header().resizeSection(4, 130)  # Last watched column
+    self.stream_list.header().resizeSection(3, 65)   # Online indicator column
+    self.stream_list.header().resizeSection(4, 130)  # Last online column
+    self.stream_list.header().resizeSection(5, 130)  # Last watched column
     self.stream_list.selectionModel().selectionChanged.connect(self._on_stream_selected)
     layout.addWidget(self.stream_list)
     # Buttons on the right side

@@ -1,4 +1,5 @@
-# StreamCondor
+# StreamCondor 🦅
+*Monitor → Click → Watch. No browser, no bullshit.* [→ screenshots](#screenshots)
 
 StreamCondor is a lightweight system-tray app that monitors livestreams and opens them with [Streamlink](https://streamlink.github.io/).
 
@@ -8,20 +9,12 @@ StreamCondor is a lightweight system-tray app that monitors livestreams and open
 - 🎯 Multi-platform support (Twitch, YouTube, and other Streamlink-supported sites)
 - 🖥️ System tray integration with status icons
 - 🎨 Custom player support (mpv, VLC, or your preferred player)
-- ⚙️ Per-stream quality, notification, and argument overrides
+- ⚙️ Per-stream quality, notification, streamlink and player options overrides
+- 🕒 Last online / last watched tracking
 - 🌐 Favicon fetching and caching
 - 📋 Quick launch from clipboard URL
 
 Supported OS: Linux, Windows, macOS (desktop environments with a system tray)
-
-## Screenshots
-
-![System Tray menu](./media/tray.png)
-![Streams Settings window](./media/settings1.png)
-![App Settings window](./media/settings2.png)
-![Stream Setting window](./media/stream1.png)
-![Stream Setting window](./media/stream2.png)
-![Stream Setting window](./media/stream3.png)
 
 ## Requirements
 
@@ -150,3 +143,21 @@ MIT License - see [LICENSE](LICENSE) for details.
 - Contributors and testers
 
 This is a third-party tool and is not affiliated with any streaming platform.
+
+## KDE Tip (Optional)
+
+If you use KDE Plasma (KWin), you may also like **Director**:
+https://github.com/tarzasai/kwin-script-director
+
+Director is a KWin script that automatically arranges windows, keeps one primary window large, and parks the others on a screen edge so you can keep them visible.
+
+This is only relevant for KDE/KWin users.
+
+## Screenshots
+
+![System Tray menu](./media/tray.png)
+![Streams Settings window](./media/settings1.png)
+![App Settings window](./media/settings2.png)
+![Stream Setting window](./media/stream1.png)
+![Stream Setting window](./media/stream2.png)
+![Stream Setting window](./media/stream3.png)
