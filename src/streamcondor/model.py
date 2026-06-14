@@ -92,7 +92,7 @@ class ConfigModel(BaseModelWithEmptyToNone):
 
 
 class StreamState(BaseModel):
-  is_online: bool = Field(default=False, description='Whether stream is currently online')
+  is_online: bool = Field(default=False, exclude=True, description='Whether stream is currently online')
   last_online_ts: float | None = Field(default=None, description='Last time stream was seen online (unix timestamp)')
   last_watched_ts: float | None = Field(default=None, description='Last time stream was launched/watched (unix timestamp)')
 
@@ -109,20 +109,20 @@ class Configuration(QObject):
     super().__init__()
     self.config_path = config_path
     self.state_path = self._resolve_state_path()
-    self._cfg: ConfigModel = ConfigModel()
+    self._config: ConfigModel = ConfigModel()
     self._state: StateModel = StateModel()
     self.load()
     self.load_state()
 
   def _resolve_state_path(self) -> Path:
-    state_dir = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.StateLocation))
+    state_dir = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.GenericStateLocation))
     if str(state_dir) == '.':
-      state_dir = self.config_path.parent / '.state'
+      state_dir = self.config_path.parent
     return state_dir / 'StreamCondor.state.json'
 
   def load(self) -> None:
     with open(self.config_path, 'r', encoding='utf-8') as f:
-      self._cfg = ConfigModel(**json.load(f))
+      self._config = ConfigModel(**json.load(f))
 
   def load_state(self) -> None:
     if not self.state_path.exists():
@@ -133,7 +133,7 @@ class Configuration(QObject):
 
   def save(self) -> None:
     with open(self.config_path, 'w', encoding='utf-8') as f:
-      json.dump(self._cfg.model_dump(mode='json', exclude_none=True), f, indent=2, ensure_ascii=False)
+      json.dump(self._config.model_dump(mode='json', exclude_none=True), f, indent=2, ensure_ascii=False)
     self.config_changed.emit()
 
   def save_state(self) -> None:
@@ -143,16 +143,16 @@ class Configuration(QObject):
     self.state_changed.emit()
 
   def set(self, key: str, value) -> None:
-    if value == getattr(self._cfg, key):
+    if value == getattr(self._config, key):
       return
-    new_cfg = self._cfg.model_dump()
+    new_cfg = self._config.model_dump()
     new_cfg[key] = value
-    self._cfg = ConfigModel(**new_cfg)
+    self._config = ConfigModel(**new_cfg)
     self.save()
 
   @property
   def autostart_monitoring(self) -> bool:
-    return self._cfg.autostart_monitoring
+    return self._config.autostart_monitoring
 
   @autostart_monitoring.setter
   def autostart_monitoring(self, value: bool) -> None:
@@ -160,7 +160,7 @@ class Configuration(QObject):
 
   @property
   def default_notify(self) -> bool:
-    return self._cfg.default_notify
+    return self._config.default_notify
 
   @default_notify.setter
   def default_notify(self, value: bool) -> None:
@@ -168,7 +168,7 @@ class Configuration(QObject):
 
   @property
   def tray_icon_color(self) -> TrayIconColor:
-    return self._cfg.tray_icon_color
+    return self._config.tray_icon_color
 
   @tray_icon_color.setter
   def tray_icon_color(self, value: TrayIconColor) -> None:
@@ -176,7 +176,7 @@ class Configuration(QObject):
 
   @property
   def tray_icon_action(self) -> TrayIconAction:
-    return self._cfg.tray_icon_action
+    return self._config.tray_icon_action
 
   @tray_icon_action.setter
   def tray_icon_action(self, value: TrayIconAction) -> None:
@@ -184,7 +184,7 @@ class Configuration(QObject):
 
   @property
   def check_interval_mins(self) -> int:
-    return self._cfg.check_interval_mins
+    return self._config.check_interval_mins
 
   @check_interval_mins.setter
   def check_interval_mins(self, value: int) -> None:
@@ -192,7 +192,7 @@ class Configuration(QObject):
 
   @property
   def default_streamlink_args(self) -> str:
-    return self._cfg.default_streamlink_args
+    return self._config.default_streamlink_args
 
   @default_streamlink_args.setter
   def default_streamlink_args(self, value: str) -> None:
@@ -200,7 +200,7 @@ class Configuration(QObject):
 
   @property
   def default_quality(self) -> str:
-    return self._cfg.default_quality
+    return self._config.default_quality
 
   @default_quality.setter
   def default_quality(self, value: str) -> None:
@@ -208,7 +208,7 @@ class Configuration(QObject):
 
   @property
   def default_player(self) -> str:
-    return self._cfg.default_player
+    return self._config.default_player
 
   @default_player.setter
   def default_player(self, value: str) -> None:
@@ -216,7 +216,7 @@ class Configuration(QObject):
 
   @property
   def default_player_args(self) -> str:
-    return self._cfg.default_player_args
+    return self._config.default_player_args
 
   @default_player_args.setter
   def default_player_args(self, value: str) -> None:
@@ -224,7 +224,7 @@ class Configuration(QObject):
 
   @property
   def alternate_player(self) -> str:
-    return self._cfg.alternate_player
+    return self._config.alternate_player
 
   @alternate_player.setter
   def alternate_player(self, value: str) -> None:
@@ -232,7 +232,7 @@ class Configuration(QObject):
 
   @property
   def alternate_player_args(self) -> str:
-    return self._cfg.alternate_player_args
+    return self._config.alternate_player_args
 
   @alternate_player_args.setter
   def alternate_player_args(self, value: str) -> None:
@@ -240,23 +240,23 @@ class Configuration(QObject):
 
   @property
   def plugin_auth_args(self) -> list[str]:
-    return self._cfg.plugin_auth_args
+    return self._config.plugin_auth_args
 
   @property
   def streams(self) -> dict[str, Stream]:
-    return self._cfg.streams
+    return self._config.streams
 
   def get_stream(self, url: str) -> Stream | None:
-    return self._cfg.streams.get(url)
+    return self._config.streams.get(url)
 
   def set_stream(self, stream: Stream) -> None:
-    new_streams = self._cfg.streams.copy()
+    new_streams = self._config.streams.copy()
     new_streams[stream.url] = stream
     self.set('streams', dict(sorted(new_streams.items())))
 
   def del_stream(self, stream: Stream) -> None:
-    if stream.url in self._cfg.streams:
-      new_streams = self._cfg.streams.copy()
+    if stream.url in self._config.streams:
+      new_streams = self._config.streams.copy()
       del new_streams[stream.url]
       self.set('streams', new_streams)
     if stream.url in self._state.streams:
@@ -284,7 +284,7 @@ class Configuration(QObject):
     self._update_stream_state(url, last_watched_ts=time.time())
 
   def is_stream_online(self, url: str) -> bool:
-    stream = self._cfg.streams.get(url)
+    stream = self._config.streams.get(url)
     if stream is not None and stream.always_on:
       return True
     stream_state = self._state.streams.get(url)
@@ -299,9 +299,9 @@ class Configuration(QObject):
     return None if stream_state is None else stream_state.last_watched_ts
 
   def get_geometry(self, window_name: str) -> Geometry | None:
-    return self._cfg.windows.get(window_name)
+    return self._config.windows.get(window_name)
 
   def set_geometry(self, window_name: str, geometry: Geometry) -> None:
-    new_windows = self._cfg.windows.copy()
+    new_windows = self._config.windows.copy()
     new_windows[window_name] = geometry
     self.set('windows', new_windows)

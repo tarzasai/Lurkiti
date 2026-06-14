@@ -429,6 +429,7 @@ class SettingsWindow(QWidget):
     )
     # Default streamlink args (text area with monospace font)
     self.text_default_sl_args = QTextEdit()
+    self.text_default_sl_args.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
     font = QFont('monospace')
     self.text_default_sl_args.setFont(font)
     self.text_default_sl_args.setPlaceholderText('e.g., --retry-max 5 --stream-segment-timeout 20')
@@ -443,6 +444,7 @@ class SettingsWindow(QWidget):
     hint_sl_args.setOpenExternalLinks(True)
     hint_sl_args.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
     hint_sl_args.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+    hint_sl_args.setContentsMargins(0, 6, 0, 0)
     hint_sl_args.setToolTip('Click to open Streamlink command-line usage documentation')
     # Default media player
     self.text_default_player = QLineEdit()
@@ -450,10 +452,10 @@ class SettingsWindow(QWidget):
     self.text_default_player.textChanged.connect(self._default_player_changed)
     # Default media player args (text area with monospace font)
     self.text_default_player_args = QTextEdit()
+    self.text_default_player_args.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
     font = QFont('monospace')
     self.text_default_player_args.setFont(font)
     self.text_default_player_args.setPlaceholderText('e.g., --no-border --no-osc')
-    self.text_default_player_args.setMaximumHeight(60)
     self.text_default_player_args.textChanged.connect(
       lambda: self.cfg.set('default_player_args', self.text_default_player_args.toPlainText())
     )
@@ -463,10 +465,10 @@ class SettingsWindow(QWidget):
     self.text_alternate_player.textChanged.connect(self._alternate_player_changed)
     # Alternate media player args (text area with monospace font)
     self.text_alternate_player_args = QTextEdit()
+    self.text_alternate_player_args.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
     font = QFont('monospace')
     self.text_alternate_player_args.setFont(font)
     self.text_alternate_player_args.setPlaceholderText('e.g., --no-border --no-osc')
-    self.text_alternate_player_args.setMaximumHeight(60)
     self.text_alternate_player_args.textChanged.connect(
       lambda: self.cfg.set('alternate_player_args', self.text_alternate_player_args.toPlainText())
     )
@@ -487,6 +489,11 @@ class SettingsWindow(QWidget):
     form_layout.addRow('Alt. player args', self.text_alternate_player_args)
     widget = QWidget()
     widget.setLayout(form_layout)
+    # Set minimum height for text areas to match line edit height
+    line_h = self.text_default_player.sizeHint().height()
+    self.text_default_sl_args.setMinimumHeight(line_h)
+    self.text_default_player_args.setMinimumHeight(line_h)
+    self.text_alternate_player_args.setMinimumHeight(line_h)
     return widget
 
   def _create_about_tab(self) -> QWidget:
