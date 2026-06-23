@@ -64,16 +64,6 @@ else
 fi
 echo ""
 
-# Generate placeholder icons
-echo "Generating placeholder icons..."
-if [ -f "assets/generate_icons.py" ]; then
-  python assets/generate_icons.py
-  echo "✓ Icons generated"
-else
-  echo "⚠ Icon generator not found"
-fi
-echo ""
-
 echo "================================================"
 echo "Setup complete!"
 echo "================================================"

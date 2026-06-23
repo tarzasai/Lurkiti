@@ -6,15 +6,6 @@ from pydantic import BaseModel, Field, field_validator
 from PyQt6.QtCore import QObject, pyqtSignal, QStandardPaths
 
 
-class TrayIconColor(Enum):
-  WHITE = 'white'
-  BLACK = 'black'
-
-  @property
-  def prefix(self) -> str:
-    return 'sc_w_' if self == TrayIconColor.WHITE else 'sc_b_'
-
-
 class TrayIconStatus(Enum):
   OFF = 'off'
   IDLE = 'idle'
@@ -84,7 +75,7 @@ class ConfigModel(BaseModelWithEmptyToNone):
   default_player_args: str | None = Field(default="", description="Default media player arguments")
   alternate_player: str | None = Field(default=None, description="Alternate media player command")
   alternate_player_args: str | None = Field(default=None, description="Alternate media player arguments")
-  tray_icon_color: TrayIconColor = Field(default=TrayIconColor.WHITE, description="Base color of the tray icon")
+  clippiti_path: str | None = Field(default=None, description="Path to Clippiti executable")
   tray_icon_action: TrayIconAction = Field(default=TrayIconAction.NOTHING, description="Action on tray icon left-click")
   streams: dict[str, Stream] = Field(default_factory=dict, description="Configured streams")
   windows: dict[str, Geometry] | None = Field(default_factory=dict, description="Window geometry settings")
@@ -167,14 +158,6 @@ class Configuration(QObject):
     self.set('default_notify', value)
 
   @property
-  def tray_icon_color(self) -> TrayIconColor:
-    return self._config.tray_icon_color
-
-  @tray_icon_color.setter
-  def tray_icon_color(self, value: TrayIconColor) -> None:
-    self.set('tray_icon_color', value)
-
-  @property
   def tray_icon_action(self) -> TrayIconAction:
     return self._config.tray_icon_action
 
@@ -237,6 +220,14 @@ class Configuration(QObject):
   @alternate_player_args.setter
   def alternate_player_args(self, value: str) -> None:
     self.set('alternate_player_args', value)
+
+  @property
+  def clippiti_path(self) -> str | None:
+    return self._config.clippiti_path
+
+  @clippiti_path.setter
+  def clippiti_path(self, value: str | None) -> None:
+    self.set('clippiti_path', value)
 
   @property
   def plugin_auth_args(self) -> list[str]:

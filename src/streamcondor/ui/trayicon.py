@@ -6,11 +6,10 @@ from PyQt6.QtGui import QIcon, QAction
 from PyQt6.QtCore import QStandardPaths
 from PyQt6.QtWidgets import QSystemTrayIcon, QMenu, QInputDialog, QApplication
 
-from streamcondor.model import Configuration, TrayIconColor, TrayIconStatus, TrayIconAction, Stream
+from streamcondor.model import Configuration, TrayIconStatus, TrayIconAction, Stream
 from streamcondor.monitor import StreamMonitor
-from streamcondor.slhelper import is_stream_live, launch_process, build_sl_command
+from streamcondor.slhelper import is_stream_live, launch_process, build_launch_command
 from streamcondor.favicons import get_stream_icon
-from streamcondor.resources import get_app_icon
 from streamcondor.ui.settings import SettingsWindow
 
 log = logging.getLogger(__name__)
@@ -38,22 +37,15 @@ class TrayIcon(QSystemTrayIcon):
     log.info('StreamCondor started')
 
   def _create_icons(self) -> None:
+    icons_dir = Path(__file__).resolve().parent.parent / 'resources' / 'icons'
     self.tray_icons = {
-      TrayIconColor.WHITE: {
-        TrayIconStatus.OFF: get_app_icon('sc_w_off'),
-        TrayIconStatus.IDLE: get_app_icon('sc_w_idle'),
-        TrayIconStatus.LIVE: get_app_icon('sc_w_live'),
-        TrayIconStatus.VIPS: get_app_icon('sc_w_vips'),
-      },
-      TrayIconColor.BLACK: {
-        TrayIconStatus.OFF: get_app_icon('sc_b_off'),
-        TrayIconStatus.IDLE: get_app_icon('sc_b_idle'),
-        TrayIconStatus.LIVE: get_app_icon('sc_b_live'),
-        TrayIconStatus.VIPS: get_app_icon('sc_b_vips'),
-      }
+      TrayIconStatus.OFF: QIcon(str(icons_dir / 'app-off.png')),
+      TrayIconStatus.IDLE: QIcon(str(icons_dir / 'app-idle.png')),
+      TrayIconStatus.LIVE: QIcon(str(icons_dir / 'app-live.png')),
+      TrayIconStatus.VIPS: QIcon(str(icons_dir / 'app-vips.png')),
     }
     # Initial tray icon
-    self.setIcon(self.tray_icons[self.cfg.tray_icon_color][TrayIconStatus.OFF])
+    self.setIcon(self.tray_icons[TrayIconStatus.OFF])
     # Icons to emulate checkbox states in menu (with both icons and standard checkboxes the menu looks weird)
     self.icon_checked = QIcon.fromTheme('ok', QIcon.fromTheme('dialog-ok'))
     self.icon_unchecked = QIcon.fromTheme('emblem-none', QIcon.fromTheme('dialog-cancel'))
@@ -125,10 +117,10 @@ class TrayIcon(QSystemTrayIcon):
     has_lives = self.monitor.live_streams_count() > 0
     has_vips = self.monitor.vips_streams_count() > 0
     self.setIcon(
-      self.tray_icons[self.cfg.tray_icon_color][TrayIconStatus.OFF] if self.monitor.paused else
-      self.tray_icons[self.cfg.tray_icon_color][TrayIconStatus.VIPS] if has_vips else
-      self.tray_icons[self.cfg.tray_icon_color][TrayIconStatus.LIVE] if has_lives else
-      self.tray_icons[self.cfg.tray_icon_color][TrayIconStatus.IDLE]
+      self.tray_icons[TrayIconStatus.OFF] if self.monitor.paused else
+      self.tray_icons[TrayIconStatus.VIPS] if has_vips else
+      self.tray_icons[TrayIconStatus.LIVE] if has_lives else
+      self.tray_icons[TrayIconStatus.IDLE]
     )
     tooltip = ['StreamCondor']
     if self.monitor.paused:
@@ -140,7 +132,7 @@ class TrayIcon(QSystemTrayIcon):
 
   def _launch_stream(self, stream: Stream) -> None:
     self.cfg.mark_stream_watched(stream.url)
-    launch_process(build_sl_command(self.cfg, stream))
+    launch_process(build_launch_command(self.cfg, stream))
 
   def _on_tray_action(self, reason: QSystemTrayIcon.ActivationReason) -> None:
     if reason != QSystemTrayIcon.ActivationReason.Trigger:

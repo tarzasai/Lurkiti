@@ -85,7 +85,6 @@ class _Favicons:
     # Method 3: Common locations
     common_paths = [
       '/images/favicon.ico',
-      'assets/favicon.ico',
       '/static/favicon.ico'
     ]
     for path in common_paths:

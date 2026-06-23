@@ -111,6 +111,17 @@ def test_streamlistmodel_timestamp_columns(app, tmp_path):
 def test_add_edit_clone_delete_flows(app, tmp_path):
     from streamcondor.model import Configuration, Stream
     from streamcondor.ui.settings import SettingsWindow
+
+    def find_stream_index(window, stream_name):
+        from PyQt6.QtCore import Qt
+        for gi in range(window.stream_model.rowCount()):
+            gidx = window.stream_model.index(gi, 0)
+            for ci in range(window.stream_model.rowCount(gidx)):
+                cidx = window.stream_model.index(ci, 0, gidx)
+                if window.stream_model.data(cidx, Qt.ItemDataRole.DisplayRole) == stream_name:
+                    return cidx
+        return None
+
     cfg_path = write_tmp_config(tmp_path)
     cfg = Configuration(Path(cfg_path))
     win = SettingsWindow(cfg)
@@ -125,17 +136,7 @@ def test_add_edit_clone_delete_flows(app, tmp_path):
     assert 'https://add' in cfg.streams
 
     # Edit the stream: find the child index for the stream we added
-    from PyQt6.QtCore import Qt
-    stream_idx = None
-    for gi in range(win.stream_model.rowCount()):
-        gidx = win.stream_model.index(gi, 0)
-        for ci in range(win.stream_model.rowCount(gidx)):
-            cidx = win.stream_model.index(ci, 0, gidx)
-            if win.stream_model.data(cidx, Qt.ItemDataRole.DisplayRole) == fake_stream.name:
-                stream_idx = cidx
-                break
-        if stream_idx:
-            break
+    stream_idx = find_stream_index(win, fake_stream.name)
     assert stream_idx is not None
     win.stream_list.setCurrentIndex(stream_idx)
     with patch('streamcondor.ui.settings.StreamDialog') as mock_dialog2:
@@ -147,7 +148,9 @@ def test_add_edit_clone_delete_flows(app, tmp_path):
     assert cfg.streams['https://add'].name == 'AddEdit'
 
     # Clone the stream: select the same child index
-    # find the same stream index for cloning
+    # Re-find index after model refresh performed by _edit_stream.
+    stream_idx = find_stream_index(win, 'AddEdit')
+    assert stream_idx is not None
     win.stream_list.setCurrentIndex(stream_idx)
     with patch('streamcondor.ui.settings.StreamDialog') as mock_dialog3:
         dlg3 = mock_dialog3.return_value
@@ -158,6 +161,8 @@ def test_add_edit_clone_delete_flows(app, tmp_path):
     assert 'https://clone' in cfg.streams
 
     # Delete the original (simulate Yes for QMessageBox)
+    stream_idx = find_stream_index(win, 'AddEdit')
+    assert stream_idx is not None
     win.stream_list.setCurrentIndex(stream_idx)
     with patch('streamcondor.ui.settings.QMessageBox.question', return_value=1):
         win._delete_stream()

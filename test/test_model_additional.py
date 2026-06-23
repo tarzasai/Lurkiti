@@ -1,12 +1,8 @@
 import unittest
-from streamcondor.model import TrayIconColor, TrayIconAction, Geometry, Stream
+from streamcondor.model import TrayIconAction, Geometry, Stream
 
 
 class TestModelAdditional(unittest.TestCase):
-    def test_tray_icon_color_prefixes(self):
-        self.assertEqual(TrayIconColor.WHITE.prefix, 'sc_w_')
-        self.assertEqual(TrayIconColor.BLACK.prefix, 'sc_b_')
-
     def test_tray_icon_action_display(self):
         for action in TrayIconAction:
             self.assertIsInstance(action.display_name, str)

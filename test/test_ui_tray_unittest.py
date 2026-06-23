@@ -29,7 +29,7 @@ class TestUITray(unittest.TestCase):
         # simulate launch
         s = MagicMock()
         s.url = 'https://x'
-        # ensure string attributes so build_sl_command can do replacements
+        # ensure string attributes so build_launch_command can do replacements
         s.name = 'mock'
         s.type = ''
         s.quality = 'best'

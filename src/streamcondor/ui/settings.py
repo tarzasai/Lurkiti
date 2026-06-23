@@ -10,8 +10,8 @@ from PyQt6.QtCore import Qt, QAbstractItemModel, QModelIndex, QItemSelection
 from PyQt6.QtGui import QIcon, QFont
 from importlib.metadata import version, PackageNotFoundError
 
-from streamcondor.model import Configuration, Stream, TrayIconColor, TrayIconAction
-from streamcondor.slhelper import launch_process, build_sl_command
+from streamcondor.model import Configuration, Stream, TrayIconAction
+from streamcondor.slhelper import launch_process, build_launch_command
 from streamcondor.favicons import get_stream_icon
 from streamcondor.ui.stream import StreamDialog
 
@@ -407,13 +407,6 @@ class SettingsWindow(QWidget):
     self.check_default_notify.stateChanged.connect(
       lambda state: self.cfg.set('default_notify', state == Qt.CheckState.Checked.value)
     )
-    # tray icon color
-    self.combo_tray_icon_color = QComboBox()
-    for color in TrayIconColor:
-      self.combo_tray_icon_color.addItem(color.value.capitalize(), color)
-    self.combo_tray_icon_color.currentIndexChanged.connect(
-      lambda index: self.cfg.set('tray_icon_color', self.combo_tray_icon_color.itemData(index).value)
-    )
     # tray icon action
     self.combo_tray_icon_action = QComboBox()
     for action in TrayIconAction:
@@ -463,6 +456,12 @@ class SettingsWindow(QWidget):
     self.text_alternate_player = QLineEdit()
     self.text_alternate_player.setPlaceholderText('e.g., mpv, vlc')
     self.text_alternate_player.textChanged.connect(self._alternate_player_changed)
+    # Clippiti executable path
+    self.text_clippiti_path = QLineEdit()
+    self.text_clippiti_path.setPlaceholderText('e.g., /usr/local/bin/clippiti')
+    self.text_clippiti_path.textChanged.connect(
+      lambda text: self.cfg.set('clippiti_path', text)
+    )
     # Alternate media player args (text area with monospace font)
     self.text_alternate_player_args = QTextEdit()
     self.text_alternate_player_args.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
@@ -479,10 +478,10 @@ class SettingsWindow(QWidget):
     form_layout.addRow('Monitoring', self.check_autostart_monitoring)
     form_layout.addRow('Check interval', self.spin_check_interval)
     form_layout.addRow('Notifications', self.check_default_notify)
-    form_layout.addRow('Icon base color', self.combo_tray_icon_color)
     form_layout.addRow('Icon left click', self.combo_tray_icon_action)
     form_layout.addRow('Default quality', self.combo_default_quality)
     form_layout.addRow(hint_sl_args, self.text_default_sl_args)
+    form_layout.addRow('Clippiti path', self.text_clippiti_path)
     form_layout.addRow('Default player', self.text_default_player)
     form_layout.addRow('Def. player args', self.text_default_player_args)
     form_layout.addRow('Alternate player', self.text_alternate_player)
@@ -528,7 +527,6 @@ class SettingsWindow(QWidget):
     # Temporarily block signals to avoid triggering saves during load
     self.check_autostart_monitoring.blockSignals(True)
     self.check_default_notify.blockSignals(True)
-    self.combo_tray_icon_color.blockSignals(True)
     self.combo_tray_icon_action.blockSignals(True)
     self.spin_check_interval.blockSignals(True)
     self.combo_default_quality.blockSignals(True)
@@ -536,6 +534,7 @@ class SettingsWindow(QWidget):
     self.text_default_player.blockSignals(True)
     self.text_default_player_args.blockSignals(True)
     self.text_alternate_player.blockSignals(True)
+    self.text_clippiti_path.blockSignals(True)
     self.text_alternate_player_args.blockSignals(True)
     # Settings tab values
     self.check_autostart_monitoring.setChecked(self.cfg.autostart_monitoring)
@@ -543,10 +542,6 @@ class SettingsWindow(QWidget):
     for i in range(self.combo_tray_icon_action.count()):
       if self.combo_tray_icon_action.itemData(i) == self.cfg.tray_icon_action:
         self.combo_tray_icon_action.setCurrentIndex(i)
-        break
-    for i in range(self.combo_tray_icon_color.count()):
-      if self.combo_tray_icon_color.itemData(i) == self.cfg.tray_icon_color:
-        self.combo_tray_icon_color.setCurrentIndex(i)
         break
     self.spin_check_interval.setValue(self.cfg.check_interval_mins)
     default_quality = self.cfg.default_quality
@@ -557,11 +552,11 @@ class SettingsWindow(QWidget):
     self.text_default_player.setText(self.cfg.default_player)
     self.text_default_player_args.setPlainText(self.cfg.default_player_args)
     self.text_alternate_player.setText(self.cfg.alternate_player)
+    self.text_clippiti_path.setText(self.cfg.clippiti_path or '')
     self.text_alternate_player_args.setPlainText(self.cfg.alternate_player_args)
     # Re-enable signals and connect to auto-save
     self.check_autostart_monitoring.blockSignals(False)
     self.check_default_notify.blockSignals(False)
-    self.combo_tray_icon_color.blockSignals(False)
     self.combo_tray_icon_action.blockSignals(False)
     self.spin_check_interval.blockSignals(False)
     self.combo_default_quality.blockSignals(False)
@@ -569,6 +564,7 @@ class SettingsWindow(QWidget):
     self.text_default_player.blockSignals(False)
     self.text_default_player_args.blockSignals(False)
     self.text_alternate_player.blockSignals(False)
+    self.text_clippiti_path.blockSignals(False)
     self.text_alternate_player_args.blockSignals(False)
 
   def _on_stream_selected(self, selected:QItemSelection, deselected:QItemSelection) -> None:
@@ -696,7 +692,7 @@ class SettingsWindow(QWidget):
     if not node or node.is_group():
       return
     self.cfg.mark_stream_watched(node.data.url)
-    launch_process(build_sl_command(self.cfg, node.data))
+    launch_process(build_launch_command(self.cfg, node.data))
 
   def _launch_stream_alternate_player(self) -> None:
     index = self.stream_list.currentIndex()
@@ -706,7 +702,7 @@ class SettingsWindow(QWidget):
     if not node or node.is_group():
       return
     self.cfg.mark_stream_watched(node.data.url)
-    launch_process(build_sl_command(self.cfg, node.data, True))
+    launch_process(build_launch_command(self.cfg, node.data, True))
 
   def _default_player_changed(self, text: str) -> None:
     self.cfg.default_player = text

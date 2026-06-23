@@ -2,7 +2,7 @@ import unittest
 import json
 from pathlib import Path
 from PyQt6.QtCore import QStandardPaths
-from streamcondor.model import Configuration, Stream, StreamState, TrayIconColor, TrayIconAction
+from streamcondor.model import Configuration, Stream, StreamState, TrayIconAction
 
 class TestConfigurationMore(unittest.TestCase):
     def test_stream_state_model_dump_excludes_is_online(self):
@@ -22,7 +22,6 @@ class TestConfigurationMore(unittest.TestCase):
             'default_quality': 'best',
             'default_player': '',
             'default_player_args': '',
-            'tray_icon_color': TrayIconColor.WHITE.value,
             'tray_icon_action': TrayIconAction.NOTHING.value,
             'streams': {}
         }
@@ -36,7 +35,7 @@ class TestConfigurationMore(unittest.TestCase):
             cfg.default_quality = '720p'
             cfg.default_player = 'vlc'
             cfg.default_player_args = '--no-border'
-            cfg.tray_icon_color = TrayIconColor.BLACK
+            cfg.clippiti_path = '/usr/local/bin/clippiti'
             cfg.tray_icon_action = TrayIconAction.OPEN_URL
             cfg.check_interval_mins = 123
             # verify properties
@@ -46,7 +45,7 @@ class TestConfigurationMore(unittest.TestCase):
             self.assertEqual(cfg.default_quality, '720p')
             self.assertEqual(cfg.default_player, 'vlc')
             self.assertEqual(cfg.default_player_args, '--no-border')
-            self.assertEqual(cfg.tray_icon_color, TrayIconColor.BLACK)
+            self.assertEqual(cfg.clippiti_path, '/usr/local/bin/clippiti')
             self.assertEqual(cfg.tray_icon_action, TrayIconAction.OPEN_URL)
             self.assertEqual(cfg.check_interval_mins, 123)
             # stream operations
@@ -78,7 +77,6 @@ class TestConfigurationMore(unittest.TestCase):
             'default_quality': 'best',
             'default_player': '',
             'default_player_args': '',
-            'tray_icon_color': TrayIconColor.WHITE.value,
             'tray_icon_action': TrayIconAction.NOTHING.value,
             'streams': {}
         }
@@ -115,7 +113,6 @@ class TestConfigurationMore(unittest.TestCase):
             'default_quality': 'best',
             'default_player': '',
             'default_player_args': '',
-            'tray_icon_color': TrayIconColor.WHITE.value,
             'tray_icon_action': TrayIconAction.NOTHING.value,
             'streams': {}
         }

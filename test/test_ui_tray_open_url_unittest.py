@@ -17,7 +17,7 @@ class TestTrayOpenUrl(unittest.TestCase):
         self.assertEqual(_check_url('https://example.com'), 'https://example.com')
         self.assertIsNone(_check_url('not-a-url'))
 
-    @patch('streamcondor.ui.trayicon.build_sl_command')
+    @patch('streamcondor.ui.trayicon.build_launch_command')
     @patch('streamcondor.ui.trayicon.launch_process')
     @patch('streamcondor.ui.trayicon.is_stream_live')
     @patch('streamcondor.ui.trayicon.pyperclip')

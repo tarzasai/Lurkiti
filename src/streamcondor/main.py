@@ -4,11 +4,11 @@ import sys
 import logging
 import argparse
 from pathlib import Path
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QApplication, QMessageBox
 from streamlink.exceptions import StreamlinkError, NoPluginError
 
 from streamcondor.ui.trayicon import TrayIcon
-from streamcondor.resources import get_app_icon
 from streamcondor.slhelper import load_sl_user_stuff
 
 log = logging.getLogger(__name__)
@@ -65,7 +65,7 @@ def main() -> int:
   setup_logging(args)
   app = QApplication([])
   app.setApplicationName('StreamCondor')
-  app.setWindowIcon(get_app_icon('app'))
+  app.setWindowIcon(QIcon(str(Path(__file__).parent / 'resources' / 'icons' / 'app-icon.png')))
   try:
     app.setDesktopFileName('streamcondor.desktop')
   except Exception:

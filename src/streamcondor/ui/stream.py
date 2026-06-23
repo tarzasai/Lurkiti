@@ -10,7 +10,7 @@ from PyQt6.QtGui import QFont, QIcon
 
 from streamcondor.model import Configuration, Stream
 from streamcondor.favicons import get_stream_icon
-from streamcondor.slhelper import sls, build_sl_command
+from streamcondor.slhelper import sls, build_launch_command
 
 SL_ARGS_HINT = '''
 <html><head/><body>
@@ -287,7 +287,7 @@ class StreamDialog(QDialog):
       return
     is_windows = platform.system() == 'Windows'
     continuation = '^' if is_windows else '\\'
-    command = build_sl_command(self.cfg, self.get_stream())
+    command = build_launch_command(self.cfg, self.get_stream())
     lines = [shlex.quote(command[0])]
     i = 1
     while i < len(command):
@@ -300,7 +300,11 @@ class StreamDialog(QDialog):
         i += 1
         continue
       # Keep option+value together in preview when they are separate argv items.
-      if token.startswith('-') and '=' not in token and i + 1 < len(command) and not command[i + 1].startswith('-'):
+      # Special case: --sl and --mpv always take a value (even if it starts with -)
+      if token in ('--sl', '--mpv') and i + 1 < len(command):
+        lines.append(f"  {shlex.quote(token)} {shlex.quote(command[i + 1])}")
+        i += 2
+      elif token.startswith('-') and '=' not in token and i + 1 < len(command) and not command[i + 1].startswith('-'):
         lines.append(f"  {shlex.quote(token)} {shlex.quote(command[i + 1])}")
         i += 2
       else:
