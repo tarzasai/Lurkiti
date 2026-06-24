@@ -34,6 +34,12 @@ Run:
 streamcondor
 ```
 
+## Companion Player: Clippiti
+
+If you want a media player made specifically for livestreams, check out my [**Clippiti**](https://github.com/tarzasai/clippiti).
+
+Clippiti lets you record streams and cut clips locally on your machine, no external services and no accounts required.
+
 ## Run from source
 
 ```bash
@@ -149,7 +155,7 @@ This is a third-party tool and is not affiliated with any streaming platform.
 If you use KDE Plasma (KWin), you may also like **Director**:
 https://github.com/tarzasai/kwin-script-director
 
-Director is a KWin script that automatically arranges windows, keeps one primary window large, and parks the others on a screen edge so you can keep them visible.
+Director is a KWin script that automatically arranges windows, keeps one primary window large, parks the others on a screen edge so you can keep them visible, and provides keyboard shortcuts to swap the main window with parked windows in rotation order.
 
 This is only relevant for KDE/KWin users.
 

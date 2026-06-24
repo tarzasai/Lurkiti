@@ -6,8 +6,6 @@ RuntimeWarning when the module is executed with `python -m streamcondor.main`.
 Provide a small lazy wrapper that imports the real `main` only when called.
 """
 
-from typing import Callable
-
 # Package version (single source of truth for runtime version display).
 # If the project is built with setuptools_scm, it will write `src/streamcondor/_version.py`.
 # Otherwise fall back to a default value for local development.
