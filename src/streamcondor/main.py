@@ -13,8 +13,8 @@ from streamcondor.slhelper import load_sl_user_stuff
 
 log = logging.getLogger(__name__)
 
-os.environ.setdefault('QT_QPA_ORG_NAME', 'StreamCondor')
-os.environ.setdefault('QT_QPA_APPLICATION_NAME', 'StreamCondor')
+os.environ.setdefault('QT_QPA_ORG_NAME', 'Lurkiti')
+os.environ.setdefault('QT_QPA_APPLICATION_NAME', 'Lurkiti')
 os.environ.setdefault('QT_LOGGING_RULES', 'qt.qpa.services=false')
 
 
@@ -36,11 +36,11 @@ def excepthook(exc_type, exc_value, exc_tb):
     msg = f"Streamlink error '{exc_value}'"
   else:
     msg = f"Error '{exc_value or exc_type}'"
-  QMessageBox.critical(None, "StreamCondor Error", msg)
+  QMessageBox.critical(None, "Lurkiti Error", msg)
 
 def parse_arguments() -> argparse.Namespace:
   parser = argparse.ArgumentParser(
-    description='StreamCondor - Monitor livestreams from system tray'
+    description='Lurkiti - Monitor livestreams from system tray'
   )
   parser.add_argument(
     '-c', '--config',
@@ -64,10 +64,10 @@ def main() -> int:
   args = parse_arguments()
   setup_logging(args)
   app = QApplication([])
-  app.setApplicationName('StreamCondor')
+  app.setApplicationName('Lurkiti')
   app.setWindowIcon(QIcon(str(Path(__file__).parent / 'resources' / 'icons' / 'app-icon.png')))
   try:
-    app.setDesktopFileName('streamcondor.desktop')
+    app.setDesktopFileName('lurkiti.desktop')
   except Exception:
     pass ## Older Qt bindings or platforms may not support this; ignore safely.
   app.setQuitOnLastWindowClosed(False)

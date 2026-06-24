@@ -124,7 +124,7 @@ class TestConfigurationMore(unittest.TestCase):
             if str(expected_dir) == '.':
                 expected_dir = cfg_path.parent
             self.assertEqual(cfg.state_path.parent, expected_dir)
-            self.assertEqual(cfg.state_path.name, 'StreamCondor.state.json')
+            self.assertEqual(cfg.state_path.name, 'Lurkiti.state.json')
         finally:
             try:
                 cfg_path.unlink()

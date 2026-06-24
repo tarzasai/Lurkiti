@@ -124,7 +124,7 @@ def launch_process(command: str | list[str]) -> bool:
   log.debug(f'Launching process: {shlex.join(tokens)}')
   try:
     is_debug = log.isEnabledFor(logging.DEBUG)
-    log_dir = os.path.join(tempfile.gettempdir(), 'streamcondor')
+    log_dir = os.path.join(tempfile.gettempdir(), 'lurkiti')
     os.makedirs(log_dir, exist_ok=True)
     log_file = tempfile.NamedTemporaryFile(
       mode='w',

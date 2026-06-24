@@ -1,6 +1,6 @@
-# Contributing to StreamCondor
+# Contributing to Lurkiti
 
-Thank you for considering contributing to StreamCondor! This document provides guidelines and instructions for contributing.
+Thank you for considering contributing to Lurkiti! This document provides guidelines and instructions for contributing.
 
 ## Table of Contents
 
@@ -67,7 +67,7 @@ What actually happens.
 **Environment**
 - OS: [e.g., Ubuntu 22.04]
 - Python: [e.g., 3.12.0]
-- StreamCondor: [e.g., 1.0.0]
+- Lurkiti: [e.g., 1.0.0]
 - Streamlink: [e.g., 8.0.0]
 
 **Logs**
@@ -129,13 +129,13 @@ Areas where contributions are especially welcome:
 
 2. **Clone your fork**:
   ```bash
-  git clone https://github.com/tarzasai/StreamCondor.git
-  cd StreamCondor
+  git clone https://github.com/tarzasai/Lurkiti.git
+  cd Lurkiti
   ```
 
 3. **Add upstream remote**:
   ```bash
-  git remote add upstream https://github.com/tarzasai/StreamCondor.git
+  git remote add upstream https://github.com/tarzasai/Lurkiti.git
   ```
 
 4. **Set up development environment**:

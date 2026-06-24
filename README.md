@@ -1,7 +1,7 @@
-# StreamCondor 🦅
-*Monitor → Click → Watch. No browser, no bullshit.* [→ screenshots on GitHub](https://github.com/tarzasai/StreamCondor#screenshots)
+# Lurkiti 👁️
+*Monitor → Click → Watch. No browser, no bullshit.* [→ screenshots on GitHub](https://github.com/tarzasai/Lurkiti#screenshots)
 
-StreamCondor is a lightweight system-tray app that monitors livestreams and opens them with [Streamlink](https://streamlink.github.io/).
+Lurkiti is a lightweight system-tray app that monitors livestreams and opens them with [Streamlink](https://streamlink.github.io/).
 
 ## Features
 
@@ -43,8 +43,8 @@ Clippiti lets you record streams and cut clips locally on your machine, no exter
 ## Run from source
 
 ```bash
-git clone https://github.com/tarzasai/StreamCondor.git
-cd StreamCondor
+git clone https://github.com/tarzasai/Lurkiti.git
+cd Lurkiti
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt -r requirements-dev.txt
@@ -74,13 +74,13 @@ streamcondor --log-level DEBUG --denoise-logging
 
 ## Configuration
 
-StreamCondor stores a JSON config file per user.
+Lurkiti stores a JSON config file per user.
 
-- Linux: `~/.config/StreamCondor.json`
-- Windows: `%APPDATA%\StreamCondor.json`
-- macOS: `~/Library/Application Support/StreamCondor.json`
+- Linux: `~/.config/Lurkiti.json`
+- Windows: `%APPDATA%\Lurkiti.json`
+- macOS: `~/Library/Application Support/Lurkiti.json`
 
-If the file does not exist, StreamCondor creates one with defaults.
+If the file does not exist, Lurkiti creates one with defaults.
 
 Minimal example:
 
@@ -132,7 +132,7 @@ streamcondor --log-level DEBUG
 
 ## Reporting issues
 
-Open an issue at https://github.com/tarzasai/StreamCondor/issues and include:
+Open an issue at https://github.com/tarzasai/Lurkiti/issues and include:
 
 - OS and desktop environment
 - Steps to reproduce
@@ -161,9 +161,9 @@ This is only relevant for KDE/KWin users.
 
 ## Screenshots
 
-![System Tray menu](https://raw.githubusercontent.com/tarzasai/StreamCondor/main/media/tray.png)
-![Streams Settings window](https://raw.githubusercontent.com/tarzasai/StreamCondor/main/media/settings1.png)
-![App Settings window](https://raw.githubusercontent.com/tarzasai/StreamCondor/main/media/settings2.png)
-![Stream Setting window](https://raw.githubusercontent.com/tarzasai/StreamCondor/main/media/stream1.png)
-![Stream Setting window](https://raw.githubusercontent.com/tarzasai/StreamCondor/main/media/stream2.png)
-![Stream Setting window](https://raw.githubusercontent.com/tarzasai/StreamCondor/main/media/stream3.png)
+![System Tray menu](https://raw.githubusercontent.com/tarzasai/Lurkiti/main/media/tray.png)
+![Streams Settings window](https://raw.githubusercontent.com/tarzasai/Lurkiti/main/media/settings1.png)
+![App Settings window](https://raw.githubusercontent.com/tarzasai/Lurkiti/main/media/settings2.png)
+![Stream Setting window](https://raw.githubusercontent.com/tarzasai/Lurkiti/main/media/stream1.png)
+![Stream Setting window](https://raw.githubusercontent.com/tarzasai/Lurkiti/main/media/stream2.png)
+![Stream Setting window](https://raw.githubusercontent.com/tarzasai/Lurkiti/main/media/stream3.png)

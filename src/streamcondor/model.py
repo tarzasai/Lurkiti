@@ -109,7 +109,7 @@ class Configuration(QObject):
     state_dir = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.GenericStateLocation))
     if str(state_dir) == '.':
       state_dir = self.config_path.parent
-    return state_dir / 'StreamCondor.state.json'
+    return state_dir / 'Lurkiti.state.json'
 
   def load(self) -> None:
     with open(self.config_path, 'r', encoding='utf-8') as f:

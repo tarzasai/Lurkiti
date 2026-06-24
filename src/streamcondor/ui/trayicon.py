@@ -23,7 +23,7 @@ class TrayIcon(QSystemTrayIcon):
       config_dir = Path(QStandardPaths.writableLocation(
         QStandardPaths.StandardLocation.ConfigLocation
       ))
-      config_path = config_dir / 'StreamCondor.json'
+      config_path = config_dir / 'Lurkiti.json'
     self.cfg = Configuration(config_path)
     self.cfg.config_changed.connect(self._update_icon)
     self.activated.connect(self._on_tray_action)
@@ -34,7 +34,7 @@ class TrayIcon(QSystemTrayIcon):
     self._create_menu()
     self._create_monitor()
     self._update_icon()
-    log.info('StreamCondor started')
+    log.info('Lurkiti started')
 
   def _create_icons(self) -> None:
     icons_dir = Path(__file__).resolve().parent.parent / 'resources' / 'icons'
@@ -122,7 +122,7 @@ class TrayIcon(QSystemTrayIcon):
       self.tray_icons[TrayIconStatus.LIVE] if has_lives else
       self.tray_icons[TrayIconStatus.IDLE]
     )
-    tooltip = ['StreamCondor']
+    tooltip = ['Lurkiti']
     if self.monitor.paused:
       tooltip.append('OFF (not checking streams)')
     elif has_lives or has_vips:

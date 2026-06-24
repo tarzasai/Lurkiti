@@ -17,7 +17,7 @@ from streamcondor.ui.stream import StreamDialog
 
 # Determine version: prefer installed distribution metadata, fallback to package __version__
 try:
-  dist_ver = version('streamcondor')
+  dist_ver = version('lurkiti')
 except PackageNotFoundError:
   import streamcondor
   dist_ver = getattr(streamcondor, '__version__', 'dev')
@@ -296,7 +296,7 @@ class SettingsWindow(QWidget):
     self._restore_geometry()
 
   def _init_ui(self) -> None:
-    self.setWindowTitle('StreamCondor Settings')
+    self.setWindowTitle('Lurkiti Settings')
     self.tabs = QTabWidget()
     self.tab_streams = self._create_streams_tab()
     self.tabs.addTab(self.tab_streams, 'Streams')
@@ -499,7 +499,7 @@ class SettingsWindow(QWidget):
     widget = QWidget()
     layout = QVBoxLayout()
     layout.addStretch(1)
-    title = QLabel('<h1>StreamCondor</h1>')
+    title = QLabel('<h1>Lurkiti</h1>')
     title.setAlignment(Qt.AlignmentFlag.AlignCenter)
     layout.addWidget(title)
     description = QLabel('<h4>A system tray application for monitoring livestreams status.</h4>')
@@ -510,8 +510,8 @@ class SettingsWindow(QWidget):
     version.setAlignment(Qt.AlignmentFlag.AlignCenter)
     layout.addWidget(version)
     links = QLabel(
-      '<p><a href="https://github.com/tarzasai/StreamCondor">GitHub Repository</a></p>'
-      '<p><a href="https://github.com/tarzasai/StreamCondor/wiki">Documentation</a></p>'
+      '<p><a href="https://github.com/tarzasai/Lurkiti">GitHub Repository</a></p>'
+      '<p><a href="https://github.com/tarzasai/Lurkiti/wiki">Documentation</a></p>'
     )
     links.setAlignment(Qt.AlignmentFlag.AlignCenter)
     links.setOpenExternalLinks(True)

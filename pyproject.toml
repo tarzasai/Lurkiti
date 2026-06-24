@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 
 [project]
-name = "streamcondor"
+name = "lurkiti"
 dynamic = ["version"]
 description = "System tray app that monitors livestreams and launches them in your favorite player via Streamlink."
 readme = "README.md"
@@ -39,8 +39,8 @@ dependencies = [
 streamcondor = "streamcondor.main:main"
 
 [project.urls]
-Repository = "https://github.com/tarzasai/StreamCondor"
-Issues = "https://github.com/tarzasai/StreamCondor/issues"
+Repository = "https://github.com/tarzasai/Lurkiti"
+Issues = "https://github.com/tarzasai/Lurkiti/issues"
 
 [tool.setuptools_scm]
 version_scheme = "post-release"
