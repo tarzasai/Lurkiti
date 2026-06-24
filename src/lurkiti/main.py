@@ -8,8 +8,8 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QApplication, QMessageBox
 from streamlink.exceptions import StreamlinkError, NoPluginError
 
-from streamcondor.ui.trayicon import TrayIcon
-from streamcondor.slhelper import load_sl_user_stuff
+from lurkiti.ui.trayicon import TrayIcon
+from lurkiti.slhelper import load_sl_user_stuff
 
 log = logging.getLogger(__name__)
 

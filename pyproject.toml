@@ -36,7 +36,7 @@ dependencies = [
 ]
 
 [project.scripts]
-streamcondor = "streamcondor.main:main"
+lurkiti = "lurkiti.main:main"
 
 [project.urls]
 Repository = "https://github.com/tarzasai/Lurkiti"
@@ -45,4 +45,4 @@ Issues = "https://github.com/tarzasai/Lurkiti/issues"
 [tool.setuptools_scm]
 version_scheme = "post-release"
 local_scheme = "no-local-version"
-write_to = "src/streamcondor/_version.py"
+write_to = "src/lurkiti/_version.py"

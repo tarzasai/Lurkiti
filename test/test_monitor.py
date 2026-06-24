@@ -2,8 +2,8 @@ import unittest
 from unittest.mock import patch, MagicMock
 import time
 
-from streamcondor.model import Configuration, Stream
-from streamcondor.monitor import StreamMonitor
+from lurkiti.model import Configuration, Stream
+from lurkiti.monitor import StreamMonitor
 
 
 class TestMonitor(unittest.TestCase):
@@ -81,7 +81,7 @@ class TestMonitor(unittest.TestCase):
         }
         json.dump(cfg, tmp)
         tmp.flush(); tmp.close()
-        from streamcondor.model import Configuration
+        from lurkiti.model import Configuration
         cfgobj = Configuration(Path(tmp.name))
         mon = StreamMonitor(cfgobj)
         # No streams online initially
@@ -113,7 +113,7 @@ class TestMonitor(unittest.TestCase):
         }
         json.dump(cfg, tmp)
         tmp.flush(); tmp.close()
-        from streamcondor.model import Configuration
+        from lurkiti.model import Configuration
         cfgobj = Configuration(Path(tmp.name))
         mon = StreamMonitor(cfgobj)
         from test.test_helpers import mock_is_stream_live

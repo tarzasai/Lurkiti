@@ -25,13 +25,13 @@ Supported OS: Linux, Windows, macOS (desktop environments with a system tray)
 ## Install (PyPI)
 
 ```bash
-pip install streamcondor
+pip install lurkiti
 ```
 
 Run:
 
 ```bash
-streamcondor
+lurkiti
 ```
 
 ## Companion Player: Clippiti
@@ -49,13 +49,13 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt -r requirements-dev.txt
 pip install -e .
-streamcondor
+lurkiti
 ```
 
 Alternative without editable install:
 
 ```bash
-PYTHONPATH="$PWD/src" .venv/bin/python -m streamcondor.main
+PYTHONPATH="$PWD/src" .venv/bin/python -m lurkiti.main
 ```
 
 ## Command-line options
@@ -69,7 +69,7 @@ PYTHONPATH="$PWD/src" .venv/bin/python -m streamcondor.main
 Example:
 
 ```bash
-streamcondor --log-level DEBUG --denoise-logging
+lurkiti --log-level DEBUG --denoise-logging
 ```
 
 ## Configuration
@@ -127,7 +127,7 @@ Or use the helper script:
 - To troubleshoot with logs:
 
 ```bash
-streamcondor --log-level DEBUG
+lurkiti --log-level DEBUG
 ```
 
 ## Reporting issues

@@ -1,4 +1,4 @@
-"""UI package for streamcondor."""
+"""UI package for lurkiti."""
 
 from .settings import SettingsWindow
 from .stream import StreamDialog

@@ -1,10 +1,11 @@
 {
-  "autostart_monitoring": false,
-  "check_interval_mins": 1,
+  "autostart_monitoring": true,
+  "check_interval_mins": 2,
   "default_notify": true,
   "default_streamlink_args": "--title \"{author} - {title}\" --retry-max 5 --stream-segment-timeout 20",
   "default_quality": "720p",
   "default_player": "mpv",
+  "clippiti_path": "clippiti",
   "tray_icon_action": "open_config",
   "streams": {
     "https://www.bbc.co.uk/iplayer/live/bbcnews": {
@@ -36,7 +37,7 @@
       "name": "Gladd",
       "type": "twitch",
       "quality": "best",
-      "player": "vlc",
+      "player": "clippiti",
       "sl_args": "--twitch-proxy-playlist=https://as.luminous.dev,https://lb-na.cdn-perfprod.com,https://lb-eu.cdn-perfprod.com,https://lb-eu3.cdn-perfprod.com,https://lb-sa.cdn-perfprod.com,https://lb-eu2.cdn-perfprod.com,https://lb-as.cdn-perfprod.com,https://eu.luminous.dev,https://api.ttv.lol",
       "notify": false,
       "always_on": false
@@ -48,6 +49,26 @@
       "quality": "best",
       "sl_args": "--twitch-proxy-playlist=https://as.luminous.dev,https://lb-na.cdn-perfprod.com,https://lb-eu.cdn-perfprod.com,https://lb-eu3.cdn-perfprod.com,https://lb-sa.cdn-perfprod.com,https://lb-eu2.cdn-perfprod.com,https://lb-as.cdn-perfprod.com,https://eu.luminous.dev,https://api.ttv.lol",
       "notify": true,
+      "always_on": false
+    },
+    "https://www.twitch.tv/maya": {
+      "url": "https://www.twitch.tv/maya",
+      "name": "Maya",
+      "type": "twitch",
+      "quality": "best",
+      "player": "clippiti",
+      "sl_args": "--twitch-proxy-playlist=https://as.luminous.dev,https://lb-na.cdn-perfprod.com,https://lb-eu.cdn-perfprod.com,https://lb-eu3.cdn-perfprod.com,https://lb-sa.cdn-perfprod.com,https://lb-eu2.cdn-perfprod.com,https://lb-as.cdn-perfprod.com,https://eu.luminous.dev,https://api.ttv.lol",
+      "notify": false,
+      "always_on": false
+    },
+    "https://www.twitch.tv/sheriffeli": {
+      "url": "https://www.twitch.tv/sheriffeli",
+      "name": "Sheriff Eli",
+      "type": "twitch",
+      "quality": "best",
+      "player": "clippiti",
+      "sl_args": "--twitch-proxy-playlist=https://as.luminous.dev,https://lb-na.cdn-perfprod.com,https://lb-eu.cdn-perfprod.com,https://lb-eu3.cdn-perfprod.com,https://lb-sa.cdn-perfprod.com,https://lb-eu2.cdn-perfprod.com,https://lb-as.cdn-perfprod.com,https://eu.luminous.dev,https://api.ttv.lol",
+      "notify": false,
       "always_on": false
     },
     "https://www.youtube.com/watch?v=gCNeDWCI0vo": {
@@ -70,8 +91,8 @@
     "settings_window": {
       "x": 0,
       "y": 0,
-      "width": 615,
-      "height": 545
+      "width": 900,
+      "height": 574
     }
   },
   "plugin_auth_args": [

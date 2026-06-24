@@ -23,8 +23,8 @@ def write_tmp_config(tmp_path):
 
 
 def test_update_icon_states(app, tmp_path):
-    from streamcondor.model import Configuration, Stream
-    from streamcondor.ui.trayicon import TrayIcon
+    from lurkiti.model import Configuration, Stream
+    from lurkiti.ui.trayicon import TrayIcon
     cfg_path = write_tmp_config(tmp_path)
     cfg = Configuration(Path(cfg_path))
     ti = TrayIcon(None, str(cfg.config_path))
@@ -38,7 +38,7 @@ def test_update_icon_states(app, tmp_path):
         ti.monitor.paused = False
         ti.monitor.get_online_streams = MagicMock(return_value=[])
         ti._update_icon()
-        assert 'StreamCondor' in ti.toolTip()
+        assert 'Lurkiti' in ti.toolTip()
 
         # one live stream
         s = Stream(url='https://x', name='X', type='youtube', notify=False)
@@ -61,11 +61,11 @@ def test_update_icon_states(app, tmp_path):
 
 
 def test_update_menu_with_favicons(app, tmp_path):
-    from streamcondor.model import Configuration, Stream
-    from streamcondor.ui.trayicon import TrayIcon
+    from lurkiti.model import Configuration, Stream
+    from lurkiti.ui.trayicon import TrayIcon
     cfg_path = write_tmp_config(tmp_path)
     cfg = Configuration(Path(cfg_path))
-    with patch('streamcondor.ui.trayicon.get_stream_icon') as mock_fav:
+    with patch('lurkiti.ui.trayicon.get_stream_icon') as mock_fav:
         # return a small pixmap
         pix = QPixmap(16, 16)
         pix.fill()
@@ -85,12 +85,12 @@ def test_update_menu_with_favicons(app, tmp_path):
 
 
 def test_update_menu_moves_perma_streams_to_submenu_when_busy(app, tmp_path):
-    from streamcondor.model import Configuration, Stream
-    from streamcondor.ui.trayicon import TrayIcon
+    from lurkiti.model import Configuration, Stream
+    from lurkiti.ui.trayicon import TrayIcon
 
     cfg_path = write_tmp_config(tmp_path)
     cfg = Configuration(Path(cfg_path))
-    with patch('streamcondor.ui.trayicon.get_stream_icon') as mock_fav:
+    with patch('lurkiti.ui.trayicon.get_stream_icon') as mock_fav:
         pix = QPixmap(16, 16)
         pix.fill()
         mock_fav.return_value = pix
@@ -113,8 +113,8 @@ def test_update_menu_moves_perma_streams_to_submenu_when_busy(app, tmp_path):
 
 
 def test_on_tray_icon_action_calls_methods(app, tmp_path):
-    from streamcondor.model import Configuration
-    from streamcondor.ui.trayicon import TrayIcon, TrayIconAction
+    from lurkiti.model import Configuration
+    from lurkiti.ui.trayicon import TrayIcon, TrayIconAction
     from PyQt6.QtWidgets import QSystemTrayIcon
     cfg_path = write_tmp_config(tmp_path)
     cfg = Configuration(Path(cfg_path))
@@ -145,15 +145,15 @@ def test_on_tray_icon_action_calls_methods(app, tmp_path):
 
 
 def test_open_url_cancel_noop(app, tmp_path):
-    from streamcondor.model import Configuration
-    from streamcondor.ui.trayicon import TrayIcon
+    from lurkiti.model import Configuration
+    from lurkiti.ui.trayicon import TrayIcon
     from PyQt6.QtWidgets import QInputDialog
     cfg_path = write_tmp_config(tmp_path)
     cfg = Configuration(Path(cfg_path))
     ti = TrayIcon(None, str(cfg.config_path))
     try:
-        with patch('streamcondor.ui.trayicon.pyperclip') as mock_clip, \
-                 patch('streamcondor.ui.trayicon.QInputDialog.getText', return_value=('', False)):
+        with patch('lurkiti.ui.trayicon.pyperclip') as mock_clip, \
+                 patch('lurkiti.ui.trayicon.QInputDialog.getText', return_value=('', False)):
             mock_clip.paste.return_value = ''
             # should not raise
             ti._open_url()
@@ -162,8 +162,8 @@ def test_open_url_cancel_noop(app, tmp_path):
 
 
 def test_on_stream_online_shows_message(app, tmp_path):
-    from streamcondor.model import Configuration, Stream
-    from streamcondor.ui.trayicon import TrayIcon
+    from lurkiti.model import Configuration, Stream
+    from lurkiti.ui.trayicon import TrayIcon
     cfg_path = write_tmp_config(tmp_path)
     cfg = Configuration(Path(cfg_path))
     ti = TrayIcon(None, str(cfg.config_path))

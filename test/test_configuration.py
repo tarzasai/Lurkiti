@@ -1,7 +1,7 @@
 import unittest
 import json
 from pathlib import Path
-from streamcondor.model import Configuration, Stream
+from lurkiti.model import Configuration, Stream
 
 
 class TestConfigurationLoadSave(unittest.TestCase):

@@ -9,7 +9,7 @@ import subprocess
 from streamlink import Streamlink
 from PyQt6.QtCore import QStandardPaths
 
-from streamcondor.model import Configuration, Stream
+from lurkiti.model import Configuration, Stream
 
 LOG_LEVEL_MAP = {
   logging.CRITICAL: 'critical',
@@ -196,7 +196,7 @@ def _build_streamlink_command(cfg: Configuration, stream: Stream, alt_player: bo
   player_args = stream.mp_args if alt_player else (stream.mp_args or cfg.default_player_args)
   resolved_player_args = None
   if player_args:
-    # Player args are treated as a raw single string. Only replace Stream Condor placeholders.
+    # Player args are treated as a raw single string. Only replace Lurkiti placeholders.
     sc_name = shlex.quote(stream.name) if stream.name else ''
     sc_type = shlex.quote(stream.type) if stream.type else ''
     resolved_player_args = player_args.replace('$SC.name', sc_name).replace('$SC.type', sc_type)
@@ -242,7 +242,7 @@ def _build_clippiti_command(cfg: Configuration, stream: Stream, alt_player: bool
   if relevant_player == 'mpv':
     player_args = stream.mp_args if alt_player else (stream.mp_args or cfg.default_player_args)
     if player_args:
-      # Player args are treated as a raw single string. Only replace Stream Condor placeholders.
+      # Player args are treated as a raw single string. Only replace Lurkiti placeholders.
       sc_name = shlex.quote(stream.name) if stream.name else ''
       sc_type = shlex.quote(stream.type) if stream.type else ''
       resolved_player_args = player_args.replace('$SC.name', sc_name).replace('$SC.type', sc_type)

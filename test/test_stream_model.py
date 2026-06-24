@@ -1,5 +1,5 @@
 import unittest
-from streamcondor.model import Stream
+from lurkiti.model import Stream
 
 
 class TestStreamModel(unittest.TestCase):

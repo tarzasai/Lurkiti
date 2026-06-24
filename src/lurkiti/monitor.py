@@ -2,8 +2,8 @@ import time
 import logging
 from PyQt6.QtCore import QThread, pyqtSignal
 
-from streamcondor.model import Configuration, Stream
-from streamcondor.slhelper import is_stream_live
+from lurkiti.model import Configuration, Stream
+from lurkiti.slhelper import is_stream_live
 
 log = logging.getLogger(__name__)
 

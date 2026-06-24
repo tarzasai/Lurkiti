@@ -608,4 +608,4 @@ By contributing, you agree that your contributions will be licensed under the pr
 
 ---
 
-Thank you for contributing to StreamCondor! 🎉
+Thank you for contributing to Lurkiti! 🎉

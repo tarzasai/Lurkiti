@@ -21,8 +21,8 @@ def write_tmp_config(tmp_path):
 
 
 def test_stream_preview_updates(app, tmp_path, mock_sls):
-    from streamcondor.model import Configuration
-    from streamcondor.ui.stream import StreamDialog
+    from lurkiti.model import Configuration
+    from lurkiti.ui.stream import StreamDialog
     cfg_path = write_tmp_config(tmp_path)
     cfg = Configuration(Path(cfg_path))
     # patch sls.resolve_url so dialog creation and updates won't call real Streamlink
@@ -39,7 +39,7 @@ def test_stream_preview_updates(app, tmp_path, mock_sls):
     preview = dlg.text_preview.toPlainText()
     assert 'streamlink' in preview
     assert 'https://example.com/video' in preview
-from streamcondor.model import Stream
+from lurkiti.model import Stream
 
 
 def test_stream_dialog_load_and_get_stream(qtbot):
@@ -51,8 +51,8 @@ def test_stream_dialog_load_and_get_stream(qtbot):
     tmp = tempfile.NamedTemporaryFile('w+', delete=False)
     json.dump({'streams': {}, 'check_interval_mins': 1, 'autostart_monitoring': False}, tmp)
     tmp.flush(); tmp.close()
-    from streamcondor.model import Configuration
-    from streamcondor.ui.stream import StreamDialog
+    from lurkiti.model import Configuration
+    from lurkiti.ui.stream import StreamDialog
     cfg = Configuration(Path(tmp.name))
     dlg = StreamDialog(None, cfg, stream=s)
     qtbot.addWidget(dlg)

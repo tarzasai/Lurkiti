@@ -21,8 +21,8 @@ def write_tmp_config(tmp_path):
 
 
 def test_settings_toggle_notify_changes_icon(app, tmp_path):
-    from streamcondor.model import Configuration
-    from streamcondor.ui.settings import SettingsWindow
+    from lurkiti.model import Configuration
+    from lurkiti.ui.settings import SettingsWindow
     cfg_path = write_tmp_config(tmp_path)
     cfg = Configuration(Path(cfg_path))
     win = SettingsWindow(cfg)
@@ -35,8 +35,8 @@ def test_settings_toggle_notify_changes_icon(app, tmp_path):
 
 
 def test_settings_exposes_tray_click_action_selector(app, tmp_path):
-    from streamcondor.model import Configuration, TrayIconAction
-    from streamcondor.ui.settings import SettingsWindow
+    from lurkiti.model import Configuration, TrayIconAction
+    from lurkiti.ui.settings import SettingsWindow
 
     cfg_path = write_tmp_config(tmp_path)
     cfg = Configuration(Path(cfg_path))
@@ -52,8 +52,8 @@ def test_settings_exposes_tray_click_action_selector(app, tmp_path):
 
 
 def test_settings_updates_clippiti_path(app, tmp_path):
-    from streamcondor.model import Configuration
-    from streamcondor.ui.settings import SettingsWindow
+    from lurkiti.model import Configuration
+    from lurkiti.ui.settings import SettingsWindow
 
     cfg_path = write_tmp_config(tmp_path)
     cfg = Configuration(Path(cfg_path))
@@ -69,7 +69,7 @@ import pytest
 import tempfile
 import json
 from pathlib import Path
-from streamcondor.model import Stream
+from lurkiti.model import Stream
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QToolButton
@@ -86,13 +86,13 @@ def _make_cfg(tmp_path):
         'autostart_monitoring': False,
         'windows': {'settings_window': {'x': 100, 'y': 100, 'width': 700, 'height': 600}}
     }))
-    from streamcondor.model import Configuration
+    from lurkiti.model import Configuration
     return Configuration(Path(tmp))
 
 
 def test_settings_load_and_toggle_stream_notify(qtbot, tmp_path, monkeypatch):
     cfg = _make_cfg(tmp_path)
-    from streamcondor.ui.settings import SettingsWindow
+    from lurkiti.ui.settings import SettingsWindow
     win = SettingsWindow(cfg)
     qtbot.addWidget(win)
     win.show()
@@ -120,7 +120,7 @@ def test_settings_load_and_toggle_stream_notify(qtbot, tmp_path, monkeypatch):
 
 def test_stream_action_toolbutton_click_keeps_selection(qtbot, tmp_path):
     cfg = _make_cfg(tmp_path)
-    from streamcondor.ui.settings import SettingsWindow
+    from lurkiti.ui.settings import SettingsWindow
     from unittest.mock import patch
 
     win = SettingsWindow(cfg)
@@ -138,7 +138,7 @@ def test_stream_action_toolbutton_click_keeps_selection(qtbot, tmp_path):
     assert isinstance(win.btn_edit, QToolButton)
     assert win.btn_edit.focusPolicy() == Qt.FocusPolicy.NoFocus
 
-    with patch('streamcondor.ui.settings.StreamDialog') as mock_dialog:
+    with patch('lurkiti.ui.settings.StreamDialog') as mock_dialog:
         mock_dialog.return_value.exec.return_value = False
         qtbot.mouseClick(win.btn_edit, Qt.MouseButton.LeftButton)
 

@@ -8,9 +8,9 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont, QIcon
 
-from streamcondor.model import Configuration, Stream
-from streamcondor.favicons import get_stream_icon
-from streamcondor.slhelper import sls, build_launch_command
+from lurkiti.model import Configuration, Stream
+from lurkiti.favicons import get_stream_icon
+from lurkiti.slhelper import sls, build_launch_command
 
 SL_ARGS_HINT = '''
 <html><head/><body>
@@ -176,7 +176,7 @@ class StreamDialog(QDialog):
 
   def _create_preview_tab(self) -> QWidget:
     top_label = QLabel(
-      'Stream Condor merges default and stream-specific options '
+      'Lurkiti merges default and stream-specific options '
       'and executes this command to open the stream.'
     )
     top_label.setStyleSheet('font-size: 10pt;')

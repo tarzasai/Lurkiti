@@ -13,21 +13,21 @@ class TestTrayOpenUrl(unittest.TestCase):
         cls._app = QApplication.instance() or QApplication([])
 
     def test_check_url_helper(self):
-        from streamcondor.ui.trayicon import _check_url
+        from lurkiti.ui.trayicon import _check_url
         self.assertEqual(_check_url('https://example.com'), 'https://example.com')
         self.assertIsNone(_check_url('not-a-url'))
 
-    @patch('streamcondor.ui.trayicon.build_launch_command')
-    @patch('streamcondor.ui.trayicon.launch_process')
-    @patch('streamcondor.ui.trayicon.is_stream_live')
-    @patch('streamcondor.ui.trayicon.pyperclip')
+    @patch('lurkiti.ui.trayicon.build_launch_command')
+    @patch('lurkiti.ui.trayicon.launch_process')
+    @patch('lurkiti.ui.trayicon.is_stream_live')
+    @patch('lurkiti.ui.trayicon.pyperclip')
     def test_open_url_uses_clipboard_and_launches(self, mock_clip, mock_is_live, mock_launch, mock_build):
         tmp = tempfile.NamedTemporaryFile('w+', delete=False)
         tmp.write(json.dumps({'streams': {}, 'check_interval_mins': 60, 'autostart_monitoring': False, 'windows': {'settings_window': {'x':100,'y':100,'width':700,'height':600}}}))
         tmp.flush(); tmp.close()
-        from streamcondor.model import Configuration
+        from lurkiti.model import Configuration
         cfg = Configuration(Path(tmp.name))
-        from streamcondor.ui.trayicon import TrayIcon
+        from lurkiti.ui.trayicon import TrayIcon
         # prepare mocks using helpers
         from test.test_helpers import mock_sls, mock_is_stream_live
         mock_clip.paste.return_value = 'https://x'

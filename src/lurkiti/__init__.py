@@ -1,13 +1,13 @@
-"""streamcondor package root
+"""lurkiti package root
 
 Keep this file lightweight to avoid importing submodules at package import
-time. Importing `streamcondor.main` during package import can trigger a
-RuntimeWarning when the module is executed with `python -m streamcondor.main`.
+time. Importing `lurkiti.main` during package import can trigger a
+RuntimeWarning when the module is executed with `python -m lurkiti.main`.
 Provide a small lazy wrapper that imports the real `main` only when called.
 """
 
 # Package version (single source of truth for runtime version display).
-# If the project is built with setuptools_scm, it will write `src/streamcondor/_version.py`.
+# If the project is built with setuptools_scm, it will write `src/lurkiti/_version.py`.
 # Otherwise fall back to a default value for local development.
 try:
   # Attempt to import the generated version module written by setuptools_scm

@@ -2,7 +2,7 @@ import unittest
 import json
 from pathlib import Path
 from PyQt6.QtCore import QStandardPaths
-from streamcondor.model import Configuration, Stream, StreamState, TrayIconAction
+from lurkiti.model import Configuration, Stream, StreamState, TrayIconAction
 
 class TestConfigurationMore(unittest.TestCase):
     def test_stream_state_model_dump_excludes_is_online(self):

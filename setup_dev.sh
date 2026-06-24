@@ -1,10 +1,10 @@
 #!/bin/bash
-# Setup script for StreamCondor development environment
+# Setup script for Lurkiti development environment
 
 set -e
 
 echo "================================================"
-echo "StreamCondor Development Environment Setup"
+echo "Lurkiti Development Environment Setup"
 echo "================================================"
 echo ""
 

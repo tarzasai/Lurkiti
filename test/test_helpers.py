@@ -1,4 +1,4 @@
-"""Test helpers for StreamCondor unit tests.
+"""Test helpers for Lurkiti unit tests.
 
 Provides helpers to mock Streamlink (`sls`) behavior and `is_stream_live`.
 """
@@ -7,7 +7,7 @@ from contextlib import contextmanager
 
 @contextmanager
 def mock_sls(streams_return=None, resolve_return=None, resolve_side_effect=None):
-  """Context manager that patches `streamcondor.slhelper.sls`.
+  """Context manager that patches `lurkiti.slhelper.sls`.
 
   Parameters:
   - streams_return: value to return for `sls.streams()`
@@ -15,7 +15,7 @@ def mock_sls(streams_return=None, resolve_return=None, resolve_side_effect=None)
   - resolve_side_effect: exception to raise from `sls.resolve_url(...)`
   """
   # Patch both the source `sls` and any modules that imported it early
-  patches = [patch('streamcondor.slhelper.sls'), patch('streamcondor.ui.stream.sls')]
+  patches = [patch('lurkiti.slhelper.sls'), patch('lurkiti.ui.stream.sls')]
   with patches[0] as mock_sls, patches[1] as mock_sls_ui:
     if streams_return is not None:
       mock_sls.streams.return_value = streams_return
@@ -36,10 +36,10 @@ def mock_sls(streams_return=None, resolve_return=None, resolve_side_effect=None)
 def mock_is_stream_live(return_value=None, side_effect=None):
   """Context manager that patches module-local `is_stream_live` used by monitor/tray.
 
-  Patches `streamcondor.monitor.is_stream_live` and `streamcondor.ui.trayicon.is_stream_live` to
+  Patches `lurkiti.monitor.is_stream_live` and `lurkiti.ui.trayicon.is_stream_live` to
   ensure tests mocking one place are consistent.
   """
-  patches = [patch('streamcondor.monitor.is_stream_live'), patch('streamcondor.ui.trayicon.is_stream_live')]
+  patches = [patch('lurkiti.monitor.is_stream_live'), patch('lurkiti.ui.trayicon.is_stream_live')]
   with patches[0] as m1, patches[1] as m2:
     if return_value is not None:
       m1.return_value = return_value

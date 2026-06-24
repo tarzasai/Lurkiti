@@ -16,9 +16,9 @@ class TestUISettings(unittest.TestCase):
         tmp = tempfile.NamedTemporaryFile('w+', delete=False)
         tmp.write(json.dumps({'streams': {}, 'check_interval_mins': 60, 'autostart_monitoring': False, 'windows': {'settings_window': {'x':100,'y':100,'width':700,'height':600}}}))
         tmp.flush(); tmp.close()
-        from streamcondor.model import Configuration
+        from lurkiti.model import Configuration
         cfg = Configuration(Path(tmp.name))
-        from streamcondor.ui.settings import SettingsWindow
+        from lurkiti.ui.settings import SettingsWindow
         win = SettingsWindow(cfg)
         # toggle default notify and ensure config.save called via set
         called = {'saved': False}

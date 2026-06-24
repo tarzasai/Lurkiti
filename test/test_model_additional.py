@@ -1,5 +1,5 @@
 import unittest
-from streamcondor.model import TrayIconAction, Geometry, Stream
+from lurkiti.model import TrayIconAction, Geometry, Stream
 
 
 class TestModelAdditional(unittest.TestCase):

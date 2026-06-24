@@ -10,17 +10,17 @@ from PyQt6.QtCore import Qt, QAbstractItemModel, QModelIndex, QItemSelection
 from PyQt6.QtGui import QIcon, QFont
 from importlib.metadata import version, PackageNotFoundError
 
-from streamcondor.model import Configuration, Stream, TrayIconAction
-from streamcondor.slhelper import launch_process, build_launch_command
-from streamcondor.favicons import get_stream_icon
-from streamcondor.ui.stream import StreamDialog
+from lurkiti.model import Configuration, Stream, TrayIconAction
+from lurkiti.slhelper import launch_process, build_launch_command
+from lurkiti.favicons import get_stream_icon
+from lurkiti.ui.stream import StreamDialog
 
 # Determine version: prefer installed distribution metadata, fallback to package __version__
 try:
   dist_ver = version('lurkiti')
 except PackageNotFoundError:
-  import streamcondor
-  dist_ver = getattr(streamcondor, '__version__', 'dev')
+  import lurkiti
+  dist_ver = getattr(lurkiti, '__version__', 'dev')
 
 log = logging.getLogger(__name__)
 

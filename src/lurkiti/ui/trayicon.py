@@ -6,11 +6,11 @@ from PyQt6.QtGui import QIcon, QAction
 from PyQt6.QtCore import QStandardPaths
 from PyQt6.QtWidgets import QSystemTrayIcon, QMenu, QInputDialog, QApplication
 
-from streamcondor.model import Configuration, TrayIconStatus, TrayIconAction, Stream
-from streamcondor.monitor import StreamMonitor
-from streamcondor.slhelper import is_stream_live, launch_process, build_launch_command
-from streamcondor.favicons import get_stream_icon
-from streamcondor.ui.settings import SettingsWindow
+from lurkiti.model import Configuration, TrayIconStatus, TrayIconAction, Stream
+from lurkiti.monitor import StreamMonitor
+from lurkiti.slhelper import is_stream_live, launch_process, build_launch_command
+from lurkiti.favicons import get_stream_icon
+from lurkiti.ui.settings import SettingsWindow
 
 log = logging.getLogger(__name__)
 

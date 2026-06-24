@@ -1,4 +1,4 @@
-"""Test package bootstrap for StreamCondor."""
+"""Test package bootstrap for Lurkiti."""
 
 import os
 import sys
