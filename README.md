@@ -34,12 +34,6 @@ Run:
 lurkiti
 ```
 
-## Companion Player: Clippiti
-
-If you want a media player made specifically for livestreams, check out my [**Clippiti**](https://github.com/tarzasai/clippiti).
-
-Clippiti lets you record streams and cut clips locally on your machine, no external services and no accounts required.
-
 ## Run from source
 
 ```bash
@@ -71,6 +65,12 @@ Example:
 ```bash
 lurkiti --log-level DEBUG --denoise-logging
 ```
+
+## Companion Player: Clippiti
+
+If you want a media player made specifically for livestreams, check out my [**Clippiti**](https://github.com/tarzasai/clippiti).
+
+Clippiti lets you record streams and cut clips locally on your machine, no external services and no accounts required.
 
 ## Configuration
 
