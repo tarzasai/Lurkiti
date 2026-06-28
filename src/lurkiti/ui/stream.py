@@ -263,9 +263,11 @@ class StreamDialog(QDialog):
     url = self.text_url.text().strip()
     if url is not None:
       try:
-        sls_info = sls.resolve_url(url)
-        stream_type = sls_info[0]  ## The plugin name
-        self.text_type.setText(stream_type)
+        plugin_name, plugin_class, resolved_url = sls.resolve_url(url)
+        self.text_type.setText(plugin_name)
+        plugin_instance = plugin_class(sls, resolved_url)
+        metadata = plugin_instance.get_metadata()
+        self.text_name.setText(metadata.get('author', self.text_name.text()))
         self._update_preview()
         get_stream_icon(self.get_stream(), size=16)  ## Preload favicon
       except Exception as e:
