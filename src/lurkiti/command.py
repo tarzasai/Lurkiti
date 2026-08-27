@@ -80,6 +80,9 @@ def launch_process(command: str | list[str]) -> bool:
       stderr=log_file,
       start_new_session=True
     )
+    # The child inherits its own duplicated fd; closing the parent's handle
+    # triggers delete_on_close so non-debug logs don't accumulate in /tmp.
+    log_file.close()
     return True
   except Exception as e:
     log.error(f'Error launching process: {e}')
