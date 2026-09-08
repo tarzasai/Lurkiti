@@ -6,7 +6,7 @@ from PyQt6.QtWidgets import (
   QLabel, QSpinBox, QCheckBox, QComboBox, QLineEdit, QTextEdit, QSizePolicy,
   QMessageBox, QAbstractItemView, QGraphicsOpacityEffect
 )
-from PyQt6.QtCore import Qt, QAbstractItemModel, QModelIndex, QItemSelection
+from PyQt6.QtCore import Qt, QAbstractItemModel, QModelIndex, QItemSelection, pyqtSignal
 from PyQt6.QtGui import QIcon, QFont
 from importlib.metadata import version, PackageNotFoundError
 
@@ -289,6 +289,9 @@ class StreamListModel(QAbstractItemModel):
 
 class SettingsWindow(QWidget):
 
+  # Emits the notification parts (author, platform, title, icon pixmap) for a preview.
+  test_notification_requested = pyqtSignal(str, str, str, object)
+
   def __init__(self, configuration: Configuration):
     super().__init__()
     self.cfg = configuration
@@ -408,6 +411,16 @@ class SettingsWindow(QWidget):
     self.check_default_notify.stateChanged.connect(
       lambda state: self.cfg.set('default_notify', state == Qt.CheckState.Checked.value)
     )
+    # Send test notification (preview how alerts look, regardless of the toggle above)
+    self.btn_test_notification = QPushButton('Test notification')
+    self.btn_test_notification.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+    self.btn_test_notification.setToolTip('Send a sample desktop notification to preview how alerts look')
+    self.btn_test_notification.clicked.connect(self._request_test_notification)
+    self.row_default_notify = QHBoxLayout()
+    self.row_default_notify.addWidget(self.check_default_notify)
+    self.row_default_notify.addSpacing(10)
+    self.row_default_notify.addWidget(self.btn_test_notification)
+    self.row_default_notify.addStretch()
     # tray icon action
     self.combo_tray_icon_action = QComboBox()
     for action in TrayIconAction:
@@ -507,7 +520,7 @@ class SettingsWindow(QWidget):
     form_layout.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
     form_layout.addRow('Monitoring', self.check_autostart_monitoring)
     form_layout.addRow('Check interval', self.spin_check_interval)
-    form_layout.addRow('Notifications', self.check_default_notify)
+    form_layout.addRow('Notifications', self.row_default_notify)
     form_layout.addRow('Icon left click', self.combo_tray_icon_action)
     form_layout.addRow('AoS submenu', self.check_always_on_submenu)
     form_layout.addRow('Default quality', self.combo_default_quality)
@@ -527,6 +540,16 @@ class SettingsWindow(QWidget):
     self.text_default_player_args.setMinimumHeight(line_h)
     self.text_alternate_player_args.setMinimumHeight(line_h)
     return widget
+
+  def _request_test_notification(self) -> None:
+    # Twitch is the primary platform, so preview with its real favicon.
+    twitch = Stream(url='https://twitch.tv', type='twitch', name='Twitch')
+    self.test_notification_requested.emit(
+      'Lurkiti',
+      'twitch',
+      '🔴 Test notification 🎉🎮🕹️📺✨🚀👀🐸 — if you can read this, alerts are working!',
+      get_stream_icon(twitch, 24),
+    )
 
   def _reload_streamlink(self) -> None:
     '''Reload Streamlink config files and sideloaded plugins without restarting.'''

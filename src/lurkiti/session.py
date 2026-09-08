@@ -1,5 +1,6 @@
 import logging
 import shlex
+from typing import NamedTuple
 from streamlink import Streamlink
 from streamlink.user_input import UserInputRequester
 from streamlink_cli.argparser import (
@@ -11,6 +12,15 @@ from streamlink_cli.argparser import (
 from streamlink_cli.constants import CONFIG_FILES, PLUGIN_DIRS
 
 log = logging.getLogger(__name__)
+
+
+class StreamProbe(NamedTuple):
+  '''Result of probing a stream: the resolving plugin, liveness and (when live) metadata.'''
+  plugin: str
+  is_live: bool
+  title: str | None = None
+  author: str | None = None
+  category: str | None = None
 
 
 class _NonInteractiveUserInputRequester(UserInputRequester):
@@ -130,7 +140,7 @@ def is_stream_live(
   stream_url: str,
   global_args: str = None,
   stream_args: str = None
-) -> tuple[str, bool]:
+) -> StreamProbe:
   '''
   Check whether a stream is currently live using Streamlink.
 
@@ -146,7 +156,9 @@ def is_stream_live(
     stream_args: Stream-specific Streamlink arguments string (takes precedence)
 
   Returns:
-    Tuple of (plugin_name, is_live)
+    A StreamProbe with the resolving plugin name, liveness and, when live, the
+    stream metadata (title, author, category). The metadata is read from the
+    same plugin instance that resolved the streams, so it costs no extra work.
   '''
   # Resolve the plugin first (raises NoPluginError for unsupported URLs) so the
   # matching per-plugin config file can be loaded alongside the CLI arguments.
@@ -166,6 +178,17 @@ def is_stream_live(
   # authentication credentials), then probe for available streams.
   setup_session_options(sls, args)
   options = setup_plugin_options(sls, args, pluginname, pluginclass)
-  streams = pluginclass(sls, resolved_url, options).streams()
+  plugin = pluginclass(sls, resolved_url, options)
+  streams = plugin.streams()
+  is_live = bool(streams)
   log.debug(f'Stream {stream_url} [{pluginname}] has currently {len(streams)} available stream(s)')
-  return pluginname, bool(streams)
+  if not is_live:
+    return StreamProbe(pluginname, False)
+  metadata = plugin.get_metadata()
+  return StreamProbe(
+    pluginname,
+    True,
+    metadata.get('title'),
+    metadata.get('author'),
+    metadata.get('category'),
+  )

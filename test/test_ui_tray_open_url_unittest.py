@@ -34,7 +34,8 @@ class TestTrayOpenUrl(unittest.TestCase):
         mock_build.return_value = ['streamlink', 'https://x']
         mock_launch.return_value = True
 
-        with mock_is_stream_live(return_value=('youtube', True)):
+        from lurkiti.session import StreamProbe
+        with mock_is_stream_live(return_value=StreamProbe('youtube', True)):
             with mock_sls(resolve_return=('youtube',)):
                 ti = TrayIcon(None, str(cfg.config_path))
                 try:

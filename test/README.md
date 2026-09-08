@@ -21,8 +21,9 @@ Unittest-style (context manager directly):
 
 ```python
 from test.test_helpers import mock_is_stream_live
+from lurkiti.session import StreamProbe
 
-with mock_is_stream_live(return_value=('youtube', True)):
+with mock_is_stream_live(return_value=StreamProbe('youtube', True)):
     # run code that calls is_stream_live
     ...
 ```
@@ -31,7 +32,8 @@ Pytest-style (fixture):
 
 ```python
 def test_example(mock_is_stream_live):
-    with mock_is_stream_live(return_value=('youtube', True)):
+    from lurkiti.session import StreamProbe
+    with mock_is_stream_live(return_value=StreamProbe('youtube', True)):
         # test code
         ...
 ```

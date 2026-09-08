@@ -4,6 +4,7 @@ import time
 
 from lurkiti.model import Configuration, Stream
 from lurkiti.monitor import StreamMonitor
+from lurkiti.session import StreamProbe
 
 
 class TestMonitor(unittest.TestCase):
@@ -32,9 +33,9 @@ class TestMonitor(unittest.TestCase):
     def test_check_single_stream_online_emits(self):
         from test.test_helpers import mock_is_stream_live
         # Simulate is_stream_live returning online
-        with mock_is_stream_live(return_value=('youtube', True)):
+        with mock_is_stream_live(return_value=StreamProbe('youtube', True)):
             emitted = []
-            self.monitor.stream_online.connect(lambda s: emitted.append(('online', s)))
+            self.monitor.stream_online.connect(lambda s, m=None: emitted.append(('online', s)))
             self.monitor._check_single_stream(self.cfg.streams['https://a.example/'])
             self.assertEqual(len(emitted), 1)
             self.assertEqual(emitted[0][0], 'online')
@@ -43,7 +44,7 @@ class TestMonitor(unittest.TestCase):
         from test.test_helpers import mock_is_stream_live
         # First set previous status to True, then simulate offline
         self.monitor.stream_status['https://a.example/'] = True
-        with mock_is_stream_live(return_value=('youtube', False)):
+        with mock_is_stream_live(return_value=StreamProbe('youtube', False)):
             emitted = []
             self.monitor.stream_offline.connect(lambda s: emitted.append(('offline', s)))
             self.monitor._check_single_stream(self.cfg.streams['https://a.example/'])
@@ -53,7 +54,7 @@ class TestMonitor(unittest.TestCase):
     def test_check_streams_respects_interval_and_selects_oldest(self):
         from test.test_helpers import mock_is_stream_live
         # Make both streams appear online, call _check_streams twice with interval
-        with mock_is_stream_live(return_value=('youtube', True)):
+        with mock_is_stream_live(return_value=StreamProbe('youtube', True)):
             # first call: both last_check are 0, should check one
             self.monitor._check_streams()
         # one stream should have a last_check set

@@ -83,6 +83,7 @@ def test_tray_toggle_and_notifications(qtbot, tmp_path, monkeypatch):
     s.notify = True
     # Patch supportsMessages to True and showMessage to capture
     monkeypatch.setattr(ti, 'supportsMessages', lambda: True)
+    monkeypatch.setattr('lurkiti.ui.trayicon.get_stream_icon', lambda *a, **k: None)
     called = {'msg': False}
     def fake_show(*args, **kwargs):
         called['msg'] = True

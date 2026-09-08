@@ -29,6 +29,7 @@ class TrayIcon(QSystemTrayIcon):
     self.cfg.config_changed.connect(self._update_icon)
     self.activated.connect(self._on_tray_action)
     self.settings = SettingsWindow(self.cfg)
+    self.settings.test_notification_requested.connect(self._notify_stream_online)
     self.notify = self.cfg.default_notify
     self.click = self.cfg.tray_icon_action
     self._create_icons()
@@ -147,16 +148,27 @@ class TrayIcon(QSystemTrayIcon):
     elif self.click == TrayIconAction.TOGGLE_NOTIFICATIONS:
       self._toggle_notifications()
 
-  def _on_stream_online(self, stream: Stream) -> None:
+  def _on_stream_online(self, stream: Stream, probe=None) -> None:
     self.cfg.mark_stream_online(stream.url)
     self._update_icon()
-    if self.notify and (stream.notify is None or stream.notify) and self.supportsMessages():
-      self.showMessage(
-        'Stream Online',
-        f'{stream.name} is now live on {stream.type}!',
-        QSystemTrayIcon.MessageIcon.Information,
-        5000
+    if self.notify and (stream.notify is None or stream.notify):
+      self._notify_stream_online(
+        stream.name,
+        stream.type,
+        getattr(probe, 'title', None),
+        get_stream_icon(stream, 24),
       )
+
+  def _notify_stream_online(self, author: str, platform: str, title: str | None, pixmap) -> None:
+    if not self.supportsMessages():
+      return
+    message = f'{author} is now live on {platform}!'
+    if title:
+      message = f'{message}\n{title}'
+    if pixmap is not None and not pixmap.isNull():
+      self.showMessage('Stream Online', message, QIcon(pixmap), 10000)
+    else:
+      self.showMessage('Stream Online', message, QSystemTrayIcon.MessageIcon.Information, 10000)
 
   def _toggle_monitoring(self) -> None:
     if self.monitor.paused:
@@ -177,8 +189,8 @@ class TrayIcon(QSystemTrayIcon):
         return
     stream = self.cfg.streams.get(stream_url)
     if stream is None:
-      stream_type, is_live = is_stream_live(stream_url)  ## can throw NoPluginError
-      if not is_live:
+      probe = is_stream_live(stream_url)  ## can throw NoPluginError
+      if not probe.is_live:
         self.showMessage(
           'Stream Offline',
           f'Stream at {stream_url} is not broadcasting.',
@@ -186,8 +198,8 @@ class TrayIcon(QSystemTrayIcon):
           5000
         )
         return
-      stream_name = 'Unknown'
-      stream = Stream(url=stream_url, type=stream_type, name=stream_name)
+      stream_name = probe.author or probe.title or 'Unknown'
+      stream = Stream(url=stream_url, type=probe.plugin, name=stream_name)
     self._launch_stream(stream)
 
   def _open_settings(self) -> None:

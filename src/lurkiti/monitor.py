@@ -9,7 +9,7 @@ log = logging.getLogger(__name__)
 
 
 class StreamMonitor(QThread):
-  stream_online = pyqtSignal(Stream)
+  stream_online = pyqtSignal(Stream, object)
   stream_offline = pyqtSignal(Stream)
 
   def __init__(self, configuration: Configuration):
@@ -50,19 +50,21 @@ class StreamMonitor(QThread):
 
   def _check_single_stream(self, stream: Stream) -> None:
     try:
-      _, is_online = is_stream_live(
+      probe = is_stream_live(
         stream.url,
         self.cfg.default_streamlink_args,
         stream.sl_args
       )
+      is_online = probe.is_live
     except Exception as e:
       log.debug(f'Stream offline or error checking {stream.url}: {e}')
+      probe = None
       is_online = False
     previous_status = self.stream_status.get(stream.url, False)
     # Detect status changes
     if is_online and not previous_status:
       log.info(f'Stream online: {stream.name}')
-      self.stream_online.emit(stream)
+      self.stream_online.emit(stream, probe)
     elif not is_online and previous_status:
       log.info(f'Stream offline: {stream.name}')
       self.stream_offline.emit(stream)
