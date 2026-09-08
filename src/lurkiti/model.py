@@ -40,6 +40,13 @@ class BaseModelWithEmptyToNone(BaseModel):
     return None if v == "" else v
 
 
+class NotifyMode(str, Enum):
+  DEFAULT = 'default'
+  NO = 'no'
+  YES = 'yes'
+  PERSISTENT = 'persistent'
+
+
 class Stream(BaseModelWithEmptyToNone):
   url: str = Field(..., description="URL of the stream")
   name: str = Field(..., description="Name of the stream")
@@ -48,8 +55,21 @@ class Stream(BaseModelWithEmptyToNone):
   player: str | None = Field(None, description="Media player command to use")
   sl_args: str | None = Field(None, description="Additional Streamlink arguments")
   mp_args: str | None = Field(None, description="Additional media player arguments")
-  notify: bool | None = Field(None, description="Whether to notify when stream goes live")
+  notify: NotifyMode = Field(default=NotifyMode.DEFAULT, description="When to notify when the stream goes live: default, no, yes, or persistent")
   always_on: bool = Field(default=False, description="Whether to always consider the stream as live")
+
+  @field_validator('notify', mode='before')
+  @classmethod
+  def _coerce_notify(cls, v):
+    # Accept legacy boolean/null values from older configs.
+    if v is None or v == '':
+      return NotifyMode.DEFAULT
+    if v is True:
+      return NotifyMode.YES
+    if v is False:
+      return NotifyMode.NO
+    return v
+
 
 
 class Geometry(BaseModel):

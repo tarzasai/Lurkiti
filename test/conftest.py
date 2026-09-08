@@ -18,6 +18,37 @@ os.environ.setdefault('PYTEST_QT_API', 'pyqt6')
 import pytest
 from test.test_helpers import mock_sls as _mock_sls_ctx, mock_is_stream_live as _mock_is_stream_live_ctx
 
+from PyQt6.QtCore import QObject, pyqtSignal
+
+
+class FakeNotifier(QObject):
+    """Hermetic stand-in for lurkiti.notifier.Notifier (no DBus in tests)."""
+    launch_requested = pyqtSignal(object)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        self.calls = []
+        self.return_value = True
+
+    @property
+    def available(self) -> bool:
+        return True
+
+    def notify_stream_online(self, header, body, stream, icon_path, persistent=False) -> bool:
+        self.calls.append((header, body, stream, icon_path, persistent))
+        return self.return_value
+
+    def shutdown(self) -> None:
+        pass
+
+
+@pytest.fixture(autouse=True)
+def _fake_notifier(monkeypatch):
+    """Replace the desktop-notifier backend with a fake in every test."""
+    monkeypatch.setattr('lurkiti.ui.trayicon.Notifier', FakeNotifier, raising=False)
+    yield
+
+
 
 @pytest.fixture
 def mock_sls():

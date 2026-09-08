@@ -3,12 +3,12 @@ import platform
 import shlex
 from PyQt6.QtWidgets import (
   QDialog, QVBoxLayout, QHBoxLayout, QTabWidget, QLabel, QLineEdit, QDialogButtonBox, QFormLayout,
-  QCheckBox, QTextEdit, QPushButton, QToolButton, QWidget, QApplication
+  QCheckBox, QRadioButton, QButtonGroup, QTextEdit, QPushButton, QToolButton, QWidget, QApplication
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont, QIcon
 
-from lurkiti.model import Configuration, Stream
+from lurkiti.model import Configuration, Stream, NotifyMode
 from lurkiti.favicons import get_stream_icon
 from lurkiti.session import sls
 from lurkiti.command import build_launch_command
@@ -130,11 +130,19 @@ class StreamDialog(QDialog):
     quality_box.addWidget(self.worst_quality)
     quality_box.addWidget(self.text_quality)
     quality_box.addWidget(self.clear_quality)
-    # Notify toggle
-    self.check_notify = QCheckBox()
-    self.check_notify.stateChanged.connect(self._update_notify_descr)
-    self.check_notify.setTristate(True)
-    self.check_notify.setCheckState(Qt.CheckState.Checked)
+    # Notify mode selector (horizontal radios)
+    self.radio_notify: dict[NotifyMode, QRadioButton] = {}
+    self.radio_notify_group = QButtonGroup(self)
+    notify_box = QHBoxLayout()
+    notify_box.setContentsMargins(0, 0, 0, 0)
+    for mode, label in ((NotifyMode.DEFAULT, 'Default'), (NotifyMode.NO, 'No'), (NotifyMode.YES, 'Yes'), (NotifyMode.PERSISTENT, 'Persistent')):
+      radio = QRadioButton(label)
+      self.radio_notify[mode] = radio
+      self.radio_notify_group.addButton(radio)
+      notify_box.addWidget(radio)
+    notify_box.addStretch()
+    self.radio_notify[NotifyMode.DEFAULT].setToolTip("Use the app's default notification setting")
+    self.radio_notify[NotifyMode.YES].setChecked(True)
     # Always on toggle
     self.check_always_on = QCheckBox()
     self.check_always_on.setText("This stream is always live (disable notifications and monitoring)")
@@ -147,7 +155,7 @@ class StreamDialog(QDialog):
     form_layout.addRow('Display name', self.text_name)
     form_layout.addRow('Media player', player_box)
     form_layout.addRow('Preferred quality', quality_box)
-    form_layout.addRow('Notify when live', self.check_notify)
+    form_layout.addRow('Notify when live', notify_box)
     form_layout.addRow('Always streaming', self.check_always_on)
     widget = QWidget()
     widget.setLayout(form_layout)
@@ -223,10 +231,10 @@ class StreamDialog(QDialog):
     self.text_mp_args.setPlainText(self.stream.mp_args)
     self.check_always_on.setChecked(self.stream.always_on)
     if self.stream.always_on:
-      self.check_notify.setChecked(False)
-      self.check_notify.setEnabled(False)
+      self.radio_notify[NotifyMode.NO].setChecked(True)
+      self._set_notify_enabled(False)
     else:
-      self.check_notify.setCheckState(_optionalBoolToCheckState(self.stream.notify))
+      self.radio_notify[self.stream.notify].setChecked(True)
     self._update_title()
     self._update_preview()
 
@@ -255,10 +263,14 @@ class StreamDialog(QDialog):
 
   def _on_alwayson_changed(self, state: Qt.CheckState) -> None:
     if state == Qt.CheckState.Checked:
-      self.check_notify.setChecked(False)
-      self.check_notify.setEnabled(False)
+      self.radio_notify[NotifyMode.NO].setChecked(True)
+      self._set_notify_enabled(False)
     else:
-      self.check_notify.setEnabled(True)
+      self._set_notify_enabled(True)
+
+  def _set_notify_enabled(self, enabled: bool) -> None:
+    for radio in self.radio_notify.values():
+      radio.setEnabled(enabled)
 
   def _refresh_stream_info(self) -> None:
     url = self.text_url.text().strip()
@@ -315,12 +327,6 @@ class StreamDialog(QDialog):
         i += 1
     self.text_preview.setPlainText(f' {continuation}\n'.join(lines))
 
-  def _update_notify_descr(self) -> None:
-    if self.check_notify.checkState() == Qt.CheckState.PartiallyChecked:
-      self.check_notify.setText(f"{'Yes' if self.cfg.default_notify else 'No'} (configuration default)")
-    else:
-      self.check_notify.setText("Yes" if self.check_notify.checkState() == Qt.CheckState.Checked else "No")
-
   def get_stream(self) -> Stream:
     return Stream(
       url=self.text_url.text().strip(),
@@ -330,13 +336,6 @@ class StreamDialog(QDialog):
       player=self.text_player.text().strip(),
       sl_args=self.text_sl_args.toPlainText().strip(),
       mp_args=self.text_mp_args.toPlainText().strip(),
-      notify=_checkStateToOptionalBool(self.check_notify.checkState()),
+      notify=next((mode for mode, radio in self.radio_notify.items() if radio.isChecked()), NotifyMode.DEFAULT),
       always_on=self.check_always_on.isChecked()
     )
-
-
-def _checkStateToOptionalBool(state: Qt.CheckState) -> bool | None:
-  return None if state == Qt.CheckState.PartiallyChecked else state == Qt.CheckState.Checked
-
-def _optionalBoolToCheckState(value: bool | None) -> Qt.CheckState:
-  return Qt.CheckState.PartiallyChecked if value is None else Qt.CheckState.Checked if value else Qt.CheckState.Unchecked

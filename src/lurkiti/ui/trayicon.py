@@ -6,11 +6,12 @@ from PyQt6.QtGui import QIcon, QAction
 from PyQt6.QtCore import QStandardPaths
 from PyQt6.QtWidgets import QSystemTrayIcon, QMenu, QInputDialog, QApplication
 
-from lurkiti.model import Configuration, TrayIconStatus, TrayIconAction, Stream
+from lurkiti.model import Configuration, TrayIconStatus, TrayIconAction, Stream, NotifyMode
 from lurkiti.monitor import StreamMonitor
 from lurkiti.session import is_stream_live
 from lurkiti.command import launch_process, build_launch_command
-from lurkiti.favicons import get_stream_icon
+from lurkiti.favicons import get_stream_icon, get_stream_icon_path
+from lurkiti.notifier import Notifier
 from lurkiti.ui.settings import SettingsWindow
 
 log = logging.getLogger(__name__)
@@ -30,6 +31,8 @@ class TrayIcon(QSystemTrayIcon):
     self.activated.connect(self._on_tray_action)
     self.settings = SettingsWindow(self.cfg)
     self.settings.test_notification_requested.connect(self._notify_stream_online)
+    self.notifier = Notifier()
+    self.notifier.launch_requested.connect(self._launch_stream)
     self.notify = self.cfg.default_notify
     self.click = self.cfg.tray_icon_action
     self._create_icons()
@@ -151,24 +154,32 @@ class TrayIcon(QSystemTrayIcon):
   def _on_stream_online(self, stream: Stream, probe=None) -> None:
     self.cfg.mark_stream_online(stream.url)
     self._update_icon()
-    if self.notify and (stream.notify is None or stream.notify):
-      self._notify_stream_online(
-        stream.name,
-        stream.type,
-        getattr(probe, 'title', None),
-        get_stream_icon(stream, 24),
-      )
+    if self.notify and self._stream_wants_notification(stream):
+      self._notify_stream_online(stream, getattr(probe, 'title', None) or '')
 
-  def _notify_stream_online(self, author: str, platform: str, title: str | None, pixmap) -> None:
+  def _stream_wants_notification(self, stream: Stream) -> bool:
+    if stream.notify == NotifyMode.NO:
+      return False
+    if stream.notify == NotifyMode.DEFAULT:
+      return self.cfg.default_notify
+    return True  # YES or PERSISTENT
+
+  def _notify_stream_online(self, stream: Stream, title: str) -> None:
+    body = f'{stream.name} is now live on {stream.type}!'
+    if title:
+      body = f'{body}\n{title}'
+    icon_path = get_stream_icon_path(stream, 24)
+    persistent = stream.notify == NotifyMode.PERSISTENT
+    # Prefer desktop-notifier (adds a Launch button); fall back to a tray balloon.
+    if self.notifier.notify_stream_online('Stream Online', body, stream, icon_path, persistent):
+      return
     if not self.supportsMessages():
       return
-    message = f'{author} is now live on {platform}!'
-    if title:
-      message = f'{message}\n{title}'
+    pixmap = get_stream_icon(stream, 24)
     if pixmap is not None and not pixmap.isNull():
-      self.showMessage('Stream Online', message, QIcon(pixmap), 10000)
+      self.showMessage('Stream Online', body, QIcon(pixmap), 10000)
     else:
-      self.showMessage('Stream Online', message, QSystemTrayIcon.MessageIcon.Information, 10000)
+      self.showMessage('Stream Online', body, QSystemTrayIcon.MessageIcon.Information, 10000)
 
   def _toggle_monitoring(self) -> None:
     if self.monitor.paused:
@@ -208,6 +219,7 @@ class TrayIcon(QSystemTrayIcon):
     self.settings.activateWindow()
 
   def _quit(self) -> None:
+    self.notifier.shutdown()
     self.monitor.stop()
     self.monitor.wait()
     self.monitor.quit()

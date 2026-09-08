@@ -21,7 +21,7 @@ def write_tmp_config(tmp_path):
 
 
 def test_streamlistmodel_checkstate_toggle(app, tmp_path):
-    from lurkiti.model import Configuration, Stream
+    from lurkiti.model import Configuration, Stream, NotifyMode
     from lurkiti.ui.settings import StreamListModel
     cfg_path = write_tmp_config(tmp_path)
     cfg = Configuration(Path(cfg_path))
@@ -44,11 +44,11 @@ def test_streamlistmodel_checkstate_toggle(app, tmp_path):
     assert idx is not None, 'stream index not found'
     # toggle check state via setData
     before = cfg.streams[s.url].notify
-    assert before is True
+    assert before == NotifyMode.YES
     from PyQt6.QtCore import Qt
     model.setData(idx, None, role=Qt.ItemDataRole.CheckStateRole)
     after = cfg.streams[s.url].notify
-    assert after is False or after is None
+    assert after == NotifyMode.NO
 
 
 def test_streamlistmodel_timestamp_columns(app, tmp_path):

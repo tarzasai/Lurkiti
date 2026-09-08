@@ -166,6 +166,13 @@ class _Favicons:
         return None
     return self.favicon_cache[stream_type].get(size)
 
+  def get_favicon_path(self, stream_url: str, stream_type: str, size: int = 16) -> Path | None:
+    # Ensure the favicon is fetched/cached, then return the on-disk PNG path.
+    if self.get_favicon(stream_url, stream_type, size) is None:
+      return None
+    cache_path = self.cache_dir / f'{stream_type}_{size}x{size}.png'
+    return cache_path if cache_path.exists() else None
+
 
 favicons = None
 
@@ -174,3 +181,10 @@ def get_stream_icon(stream: Stream, size: int = 16) -> QPixmap | None:
   if favicons is None:
     favicons = _Favicons()
   return favicons.get_favicon(stream.url, stream.type, size)
+
+
+def get_stream_icon_path(stream: Stream, size: int = 16) -> Path | None:
+  global favicons
+  if favicons is None:
+    favicons = _Favicons()
+  return favicons.get_favicon_path(stream.url, stream.type, size)

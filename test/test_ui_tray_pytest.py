@@ -81,13 +81,8 @@ def test_tray_toggle_and_notifications(qtbot, tmp_path, monkeypatch):
     s.name = 'X'
     s.type = 't'
     s.notify = True
-    # Patch supportsMessages to True and showMessage to capture
-    monkeypatch.setattr(ti, 'supportsMessages', lambda: True)
-    monkeypatch.setattr('lurkiti.ui.trayicon.get_stream_icon', lambda *a, **k: None)
-    called = {'msg': False}
-    def fake_show(*args, **kwargs):
-        called['msg'] = True
-    ti.showMessage = fake_show
+    # Notifications now flow through the notifier; avoid favicon network lookups
+    monkeypatch.setattr('lurkiti.ui.trayicon.get_stream_icon_path', lambda *a, **k: None)
     ti.notify = True
     ti._on_stream_online(s)
-    assert called['msg']
+    assert ti.notifier.calls

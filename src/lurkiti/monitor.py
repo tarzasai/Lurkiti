@@ -2,7 +2,7 @@ import time
 import logging
 from PyQt6.QtCore import QThread, pyqtSignal
 
-from lurkiti.model import Configuration, Stream
+from lurkiti.model import Configuration, Stream, NotifyMode
 from lurkiti.session import is_stream_live
 
 log = logging.getLogger(__name__)
@@ -88,7 +88,7 @@ class StreamMonitor(QThread):
   def vips_streams_count(self) -> int:
     return sum(
       1 for stream in self.cfg.streams.values()
-        if stream.notify and self.stream_status.get(stream.url, False)
+        if stream.notify in (NotifyMode.YES, NotifyMode.PERSISTENT) and self.stream_status.get(stream.url, False)
     )
 
   def get_perma_streams(self) -> list[Stream]:

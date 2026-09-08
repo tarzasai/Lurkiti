@@ -10,7 +10,7 @@ from PyQt6.QtCore import Qt, QAbstractItemModel, QModelIndex, QItemSelection, py
 from PyQt6.QtGui import QIcon, QFont
 from importlib.metadata import version, PackageNotFoundError
 
-from lurkiti.model import Configuration, Stream, TrayIconAction
+from lurkiti.model import Configuration, Stream, TrayIconAction, NotifyMode
 from lurkiti.command import launch_process, build_launch_command
 from lurkiti.session import load_sl_user_stuff
 from lurkiti.favicons import get_stream_icon
@@ -242,9 +242,9 @@ class StreamListModel(QAbstractItemModel):
       if node.is_stream():
         stream = node.data
         return None if stream.always_on \
-          else Qt.CheckState.PartiallyChecked if stream.notify is None \
-          else Qt.CheckState.Checked if stream.notify \
-          else Qt.CheckState.Unchecked
+          else Qt.CheckState.PartiallyChecked if stream.notify == NotifyMode.DEFAULT \
+          else Qt.CheckState.Unchecked if stream.notify == NotifyMode.NO \
+          else Qt.CheckState.Checked
       return None
     return None
 
@@ -256,14 +256,14 @@ class StreamListModel(QAbstractItemModel):
     if not (node and node.is_stream() and role == Qt.ItemDataRole.CheckStateRole):
       return False
     stream = node.data
-    # the value argument seems only useful to toggle True/False, so we'll cycle through our three states
-    is_true = stream.notify
-    if is_true is None:
-      stream.notify = True # PartiallyChecked (None) -> Checked
-    elif is_true:
-      stream.notify = False # Checked -> Unchecked
-    else:
-      stream.notify = None # Unchecked -> PartiallyChecked (None)
+    # Cycle the quick toggle through default -> yes -> no (persistent is set in the dialog).
+    mode = stream.notify
+    if mode == NotifyMode.DEFAULT:
+      stream.notify = NotifyMode.YES
+    elif mode == NotifyMode.NO:
+      stream.notify = NotifyMode.DEFAULT
+    else:  # YES or PERSISTENT
+      stream.notify = NotifyMode.NO
     self.cfg.save()
     self.dataChanged.emit(index, index, [Qt.ItemDataRole.CheckStateRole])
     return True
@@ -289,8 +289,8 @@ class StreamListModel(QAbstractItemModel):
 
 class SettingsWindow(QWidget):
 
-  # Emits the notification parts (author, platform, title, icon pixmap) for a preview.
-  test_notification_requested = pyqtSignal(str, str, str, object)
+  # Emits (stream, title) to preview a stream-online notification.
+  test_notification_requested = pyqtSignal(Stream, str)
 
   def __init__(self, configuration: Configuration):
     super().__init__()
@@ -542,13 +542,11 @@ class SettingsWindow(QWidget):
     return widget
 
   def _request_test_notification(self) -> None:
-    # Twitch is the primary platform, so preview with its real favicon.
-    twitch = Stream(url='https://twitch.tv', type='twitch', name='Twitch')
+    # Twitch is the primary platform; preview a real stream-online notification.
+    twitch = Stream(url='https://twitch.tv', type='twitch', name='Lurkiti')
     self.test_notification_requested.emit(
-      'Lurkiti',
-      'twitch',
+      twitch,
       '🔴 Test notification 🎉🎮🕹️📺✨🚀👀🐸 — if you can read this, alerts are working!',
-      get_stream_icon(twitch, 24),
     )
 
   def _reload_streamlink(self) -> None:

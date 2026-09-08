@@ -168,12 +168,10 @@ def test_on_stream_online_shows_message(app, tmp_path):
     cfg = Configuration(Path(cfg_path))
     ti = TrayIcon(None, str(cfg.config_path))
     try:
-        s = Stream(url='https://x', name='X', type='youtube', notify=None)
+        s = Stream(url='https://x', name='X', type='youtube', notify=True)
         ti.notify = True
-        with patch.object(ti, 'supportsMessages', return_value=True), \
-             patch('lurkiti.ui.trayicon.get_stream_icon', return_value=None), \
-             patch.object(ti, 'showMessage') as mock_show:
+        with patch('lurkiti.ui.trayicon.get_stream_icon_path', return_value=None):
             ti._on_stream_online(s)
-            mock_show.assert_called()
+            assert ti.notifier.calls
     finally:
         ti.monitor.stop(); ti.monitor.wait(); ti.monitor.quit()
