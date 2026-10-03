@@ -15,7 +15,8 @@ AppPublisher=Tarzasai
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
-OutputDir=dist\installer
+; Paths are anchored to the repo root ({#SourcePath} is this .iss file's dir).
+OutputDir={#SourcePath}..\..\dist\installer
 OutputBaseFilename=lurkiti-{#MyAppVersion}-setup
 Compression=lzma2
 SolidCompression=yes
@@ -27,7 +28,7 @@ Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription
 Name: "startup"; Description: "Start {#MyAppName} when I log in"; GroupDescription: "Startup:"; Flags: unchecked
 
 [Files]
-Source: "dist\lurkiti\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
+Source: "{#SourcePath}..\..\dist\lurkiti\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
