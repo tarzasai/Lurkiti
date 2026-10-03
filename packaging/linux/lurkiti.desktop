@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Lurkiti
+Comment=System tray app that monitors livestreams and launches them via Streamlink
+Exec=lurkiti
+Icon=lurkiti
+Categories=Utility;Network;AudioVideo;
+Terminal=false

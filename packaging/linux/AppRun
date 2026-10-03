@@ -1,0 +1,4 @@
+#!/bin/bash
+# AppImage entrypoint. The PyInstaller onedir payload lives in usr/bin/lurkiti.
+HERE="$(dirname "$(readlink -f "${0}")")"
+exec "${HERE}/usr/bin/lurkiti/lurkiti" "$@"
