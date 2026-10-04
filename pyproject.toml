@@ -14,7 +14,17 @@ license-files = ["LICENSE"]
 authors = [
     { name = "Tarzasai" },
 ]
-keywords = ["stream", "tray", "monitor", "pyqt6"]
+keywords = [
+	"stream",
+	"tray",
+	"monitor",
+	"pyqt6",
+	"streamlink",
+	"livestream",
+	"system-tray",
+	"notifications",
+	"desktop-app",
+]
 classifiers = [
 	"Development Status :: 4 - Beta",
 	"Intended Audience :: End Users/Desktop",
@@ -44,6 +54,6 @@ Repository = "https://github.com/tarzasai/Lurkiti"
 Issues = "https://github.com/tarzasai/Lurkiti/issues"
 
 [tool.setuptools_scm]
-version_scheme = "post-release"
+version_scheme = "no-guess-dev"
 local_scheme = "no-local-version"
 write_to = "src/lurkiti/_version.py"
