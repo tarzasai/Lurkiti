@@ -68,7 +68,7 @@ What actually happens.
 - OS: [e.g., Ubuntu 22.04]
 - Python: [e.g., 3.12.0]
 - Lurkiti: [e.g., 1.0.0]
-- Streamlink: [e.g., 8.0.0]
+- Streamlink: [e.g., 8.5.0]
 
 **Logs**
 ```
@@ -145,11 +145,14 @@ Areas where contributions are especially welcome:
    python3 -m venv .venv
    source .venv/bin/activate
    pip install -r requirements.txt
+   pip install -r requirements-dev.txt
    ```
 
 5. **Verify setup**:
    ```bash
-   python src/main.py --help
+   PYTHONPATH=src python3 -m lurkiti.main --help
+   # Or, once installed, the console script:
+   lurkiti --help
    ```
 
 ### Development Dependencies
@@ -462,6 +465,22 @@ Fixed stuff      # Unclear what was fixed
 
 ## Testing Guidelines
 
+### Running Tests
+
+Run the suite with the helper script, which uses the project's virtualenv and
+isolates each test file in its own process (avoiding cross-file Qt state leakage):
+
+```bash
+./run_tests.sh
+```
+
+Or invoke pytest directly inside the virtual environment:
+
+```bash
+QT_QPA_PLATFORM=offscreen PYTHONPATH=src .venv/bin/python -m pytest --forked
+.venv/bin/python -m pytest test/test_launcher_args.py
+```
+
 ### Manual Testing
 
 Before submitting PR, test these workflows:
@@ -483,31 +502,24 @@ Before submitting PR, test these workflows:
 - [ ] Error cases handled gracefully
 - [ ] User-facing messages are clear
 
-### Writing Tests (Future)
+### Writing Tests
 
-When unit testing is implemented:
+Place tests under `test/` and import from the `lurkiti` package. Both
+`unittest`- and `pytest`-style tests are used in the suite:
 
 ```python
-# test/test_launcher.py
-import pytest
-from src.launcher import StreamLauncher
-from src.configuration import Configuration
+# test/test_launcher_args.py
+from lurkiti.command import _parse_args_string, _merge_args_strings
 
-def test_command_building():
-  """Test streamlink command construction."""
-  config = Configuration()
-  launcher = StreamLauncher(config)
+def test_parse_args_string_basic():
+  d = _parse_args_string('--flag --option 123 -y hello')
+  assert d['--flag'] is None
+  assert d['--option'] == '123'
+  assert d['-y'] == 'hello'
 
-  stream = {
-    'url': 'https://www.twitch.tv/test',
-    'quality': 'best',
-    'sl_args': '--retry-max 5'
-  }
-
-  command = launcher.build_command(stream)
-  assert 'streamlink' in command
-  assert stream['url'] in command
-  assert 'best' in command
+def test_merge_args_strings_override():
+  out = _merge_args_strings('--option 123 -x', '--option 456 -z')
+  assert '456' in out
 ```
 
 ## Documentation
@@ -523,10 +535,14 @@ Update docs when you:
 ### Documentation Files
 
 - **README.md** - Overview, quick start, basic usage
-- **doc/architecture.md** - System design, components
-- **doc/data-flow.md** - Data flows and interactions
-- **doc/development.md** - Development setup and workflow
-- **doc/configuration.md** - Configuration reference
+- **CONTRIBUTING.md** - Contribution workflow and standards
+- **doc/architecture-overview.md** - System design, components
+- **doc/runtime-workflows.md** - Runtime flows and interactions
+- **doc/module-reference.md** - Module-by-module reference
+- **doc/configuration-and-cli.md** - Configuration and CLI reference
+- **doc/operations-and-troubleshooting.md** - Operations and troubleshooting
+- **doc/resource-footprint.md** - Thread and memory footprint
+- **test/README.md** - Test suite notes and conventions
 - **Code comments** - Complex logic, non-obvious decisions
 
 ### Documentation Style
@@ -540,7 +556,7 @@ Update docs when you:
 
 ```bash
 # Use syntax highlighting
-python src/main.py --help
+PYTHONPATH=src python3 -m lurkiti.main --help
 ```
 
 **Bold for emphasis**, *italic for terms*.
@@ -577,7 +593,7 @@ graph TD
 
 ### Resources
 
-- **Documentation** - Start with README and doc/ directory
+- **Documentation** - Start with the README, the doc/ directory, and CONTRIBUTING
 - **Issues** - Search existing issues for similar problems
 - **Discussions** - Ask questions in GitHub Discussions
 - **Code Examples** - Check test/ directory
