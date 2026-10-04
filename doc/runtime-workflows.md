@@ -33,7 +33,7 @@ sequenceDiagram
     participant SL as Streamlink session
     participant Tray as TrayIcon
 
-    loop every ~150 ms (while not paused)
+    loop while not paused
         Mon->>Mon: mark always_on streams live
         Mon->>Mon: pick the single oldest "due" stream
         Note over Mon: due = never checked, or<br/>check_interval_mins elapsed
@@ -44,10 +44,15 @@ sequenceDiagram
         else transition online -> offline
             Mon-->>Tray: stream_offline(stream)
         end
+        Mon->>Mon: wait until next due (or woken by wake())
     end
 ```
 
-The short tick keeps the thread responsive to `pause`/`resume`/`stop`; actual probing is throttled by `check_interval_mins` per stream, and only one stream is probed per tick.
+The loop is event-driven: it sleeps until the next stream is due (via a
+`threading.Event`) and is woken immediately on `pause`/`resume`/`stop` and on any
+configuration change (`config_changed`, e.g. an `always_on` toggle or interval
+edit). Only one stream is probed per iteration, throttled by `check_interval_mins`,
+so idle CPU is effectively zero between checks.
 
 ## 3. Going Live and Notification
 
