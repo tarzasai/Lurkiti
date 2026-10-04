@@ -120,14 +120,16 @@ class TestMonitor(unittest.TestCase):
         from test.test_helpers import mock_is_stream_live
         # Force is_stream_live to raise
         with mock_is_stream_live(side_effect=Exception('boom')):
-            # Patch msleep to rapidly break the loop after one iteration
+            # Break the loop after a couple iterations by driving the wake wait.
             called = {'count': 0}
-            def fake_msleep(ms):
+            def fake_wait(timeout=None):
                 called['count'] += 1
                 if called['count'] > 1:
                     mon.stop()
-            mon.msleep = fake_msleep
-            # Run in current thread (not starting QThread) — should run a couple iterations and then stop
+                return False
+            mon._wake.wait = fake_wait
+            # Run in the current thread (not starting the QThread) — should run a
+            # couple iterations and then stop.
             mon.run()
             # Ensure that an attempt to check was made and we recorded a status (False)
             self.assertIn('https://err.example/', mon.stream_status)

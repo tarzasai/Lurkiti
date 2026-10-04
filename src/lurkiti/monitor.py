@@ -1,11 +1,21 @@
 import time
 import logging
+import threading
 from PyQt6.QtCore import QThread, pyqtSignal
 
 from lurkiti.model import Configuration, Stream, NotifyMode
 from lurkiti.session import is_stream_live
 
 log = logging.getLogger(__name__)
+
+# How long the loop sleeps when nothing is due (paused, no streams, or all
+# always_on). It is always woken earlier by wake() on control/config changes.
+_IDLE_WAKE_CAP_SECONDS = 3600.0
+
+# Floor applied only while checks are due, so draining a backlog (or a zero/tiny
+# check interval) paces at most ~1 check per this many seconds instead of
+# hot-spinning. It never delays wake() and never applies to idle sleeps.
+_MIN_SLEEP_SECONDS = 0.15
 
 
 class StreamMonitor(QThread):
@@ -19,6 +29,10 @@ class StreamMonitor(QThread):
     self.paused = not self.cfg.autostart_monitoring
     self.stream_status: dict[str, bool] = {}
     self.last_check_time: dict[str, float] = {}
+    self._wake = threading.Event()
+    # Config edits (global or per-stream, e.g. toggling always_on or changing the
+    # check interval) must take effect without waiting out the current sleep.
+    self.cfg.config_changed.connect(self.wake)
 
   def run(self) -> None:
     while self.running:
@@ -27,7 +41,38 @@ class StreamMonitor(QThread):
           self.stream_status[url] = True
       if not self.paused:
         self._check_streams()
-      self.msleep(150)  ## it must be short to keep the app responsive
+      # Sleep until the next check is due, or until wake() is signalled.
+      self._wake.wait(self._seconds_until_next_wake())
+      self._wake.clear()
+
+  def wake(self) -> None:
+    '''Interrupt the current sleep so the loop re-evaluates the config at once.'''
+    self._wake.set()
+
+  def _seconds_until_next_wake(self) -> float:
+    '''
+    Seconds until the soonest due liveness check, mirroring the due logic in
+    _check_streams: a small floor while checks are due (so a backlog drains
+    without hot-spinning) and a long cap when nothing is checkable. wake()
+    shortens any sleep when the configuration or run state changes.
+    '''
+    if self.paused:
+      return _IDLE_WAKE_CAP_SECONDS
+    interval = self.cfg.check_interval_mins * 60
+    now = time.time()
+    soonest = None
+    for url, stream in self.cfg.streams.items():
+      if stream.always_on:
+        continue
+      last_check = self.last_check_time.get(url, 0)
+      if last_check == 0:
+        return _MIN_SLEEP_SECONDS  # due now; floor avoids a hot spin
+      wait = (last_check + interval) - now
+      if soonest is None or wait < soonest:
+        soonest = wait
+    if soonest is None:
+      return _IDLE_WAKE_CAP_SECONDS  # nothing checkable (empty or all always_on)
+    return max(_MIN_SLEEP_SECONDS, soonest)
 
   def _check_streams(self) -> None:
     # Filter enabled streams that need checking
@@ -72,12 +117,15 @@ class StreamMonitor(QThread):
 
   def stop(self) -> None:
     self.running = False
+    self.wake()
 
   def pause(self) -> None:
     self.paused = True
+    self.wake()
 
   def resume(self) -> None:
     self.paused = False
+    self.wake()
 
   def live_streams_count(self) -> int:
     return sum(
