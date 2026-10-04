@@ -4,8 +4,7 @@
 
 `lurkiti [options]`
 
-Lurkiti is a tray application with no positional arguments; all streams are
-configured through the UI and stored in the config file.
+Lurkiti is a tray application with no positional arguments; all streams are configured through the UI and stored in the config file.
 
 Options:
 
@@ -37,9 +36,7 @@ Volatile runtime state is stored separately from settings:
 - Favicon cache: `<CacheLocation>/favicons/`.
 - Transient player launch logs: `<tmp>/lurkiti/`.
 
-The config and state files are JSON. Settings are saved whenever a value changes
-(`config_changed` is emitted); state is saved when a stream's liveness or
-watch/online timestamps change (`state_changed`).
+The config and state files are JSON. Settings are saved whenever a value changes (`config_changed` is emitted); state is saved when a stream's liveness or watch/online timestamps change (`state_changed`).
 
 ## Global Settings (`ConfigModel`)
 
@@ -60,8 +57,7 @@ watch/online timestamps change (`state_changed`).
 | `streams` | `{}` | Configured streams, keyed by URL |
 | `windows` | `{}` | Saved window geometries |
 
-`tray_icon_action` is one of: `nothing`, `open_url`, `open_config`,
-`toggle_monitoring`, `toggle_notifications`.
+`tray_icon_action` is one of: `nothing`, `open_url`, `open_config`, `toggle_monitoring`, `toggle_notifications`.
 
 ## Per-Stream Settings (`Stream`)
 
@@ -79,14 +75,12 @@ watch/online timestamps change (`state_changed`).
 
 ### Argument placeholders
 
-Both default and per-stream Streamlink/player argument strings support
-Lurkiti placeholders, substituted when the command is built:
+Both default and per-stream Streamlink/player argument strings support Lurkiti placeholders, substituted when the command is built:
 
 - `$SC.name` → the stream's `name`
 - `$SC.type` → the stream's `type`
 
-`default_streamlink_args` additionally uses Streamlink's own `--title` template
-tokens (e.g. `{author}`, `{title}`), which are expanded by Streamlink, not Lurkiti.
+`default_streamlink_args` additionally uses Streamlink's own `--title` template tokens (e.g. `{author}`, `{title}`), which are expanded by Streamlink, not Lurkiti.
 
 ## Runtime State (`StreamState`)
 
@@ -98,8 +92,4 @@ Stored in the state file, per stream URL:
 
 ## Launching with Clippiti
 
-When a stream's effective player is `clippiti` and a Clippiti executable is
-available (via `clippiti_path` or found on `PATH`), the launch command targets
-Clippiti instead of Streamlink. Clippiti takes its own arguments (e.g. `--mpv`)
-before a `--` separator, with the merged Streamlink arguments forwarded after it;
-`--title` and `--player` are stripped since Clippiti manages playback itself.
+When a stream's effective player is `clippiti` and a Clippiti executable is available (via `clippiti_path` or found on `PATH`), the launch command targets Clippiti instead of Streamlink. Clippiti takes its own arguments (e.g. `--mpv`) before a `--` separator, with the merged Streamlink arguments forwarded after it; `--title` and `--player` are stripped since Clippiti manages playback itself.

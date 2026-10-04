@@ -48,11 +48,7 @@ sequenceDiagram
     end
 ```
 
-The loop is event-driven: it sleeps until the next stream is due (via a
-`threading.Event`) and is woken immediately on `pause`/`resume`/`stop` and on any
-configuration change (`config_changed`, e.g. an `always_on` toggle or interval
-edit). Only one stream is probed per iteration, throttled by `check_interval_mins`,
-so idle CPU is effectively zero between checks.
+The loop is event-driven: it sleeps until the next stream is due (via a `threading.Event`) and is woken immediately on `pause`/`resume`/`stop` and on any configuration change (`config_changed`, e.g. an `always_on` toggle or interval edit). Only one stream is probed per iteration, throttled by `check_interval_mins`, so idle CPU is effectively zero between checks.
 
 ## 3. Going Live and Notification
 

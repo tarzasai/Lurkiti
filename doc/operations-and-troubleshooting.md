@@ -52,10 +52,6 @@ QT_QPA_PLATFORM=offscreen PYTHONPATH=src ./.venv/bin/python -m pytest --forked
 
 ## Logging Tips
 
-Use `--log-level DEBUG` for verbose diagnostics, and `--denoise-logging` to quiet
-noisy dependencies.
+Use `--log-level DEBUG` for verbose diagnostics, and `--denoise-logging` to quiet noisy dependencies.
 
-When debug logging is enabled, each launched player's stdout/stderr is written to
-a log under `<tmp>/lurkiti/`, and the exact command is written to a `cmd_*.log`
-file there, so a failed launch can be inspected after the fact. Without debug
-logging these transient logs are removed automatically.
+When debug logging is enabled, each launched player's stdout/stderr is written to a log under `<tmp>/lurkiti/`, and the exact command is written to a `cmd_*.log` file there, so a failed launch can be inspected after the fact. Without debug logging these transient logs are removed automatically.

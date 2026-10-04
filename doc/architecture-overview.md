@@ -1,7 +1,6 @@
 # Architecture Overview
 
-Lurkiti is a desktop system-tray application built with PyQt6.
-It uses the Streamlink Python API to periodically probe configured streams for liveness, notifies the user when a stream goes live, and launches the stream in an external player (Streamlink or Clippiti) as a detached process.
+Lurkiti is a desktop system-tray application built with PyQt6. It uses the Streamlink Python API to periodically probe configured streams for liveness, notifies the user when a stream goes live, and launches the stream in an external player (Streamlink or Clippiti) as a detached process.
 
 ## High-Level Structure
 
