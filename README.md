@@ -1,7 +1,7 @@
 # Lurkiti 👁️
 *Monitor → Click → Watch. No browser, no bullshit.* [→ screenshots on GitHub](https://github.com/tarzasai/Lurkiti#screenshots)
 
-Lurkiti is a lightweight system-tray app that monitors livestreams and opens them with [Streamlink](https://streamlink.github.io/).
+Lurkiti is a system-tray app that monitors livestreams and opens them with [Streamlink](https://streamlink.github.io/).
 
 ## Features
 
