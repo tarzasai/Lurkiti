@@ -8,6 +8,7 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QApplication, QMessageBox
 from streamlink.exceptions import StreamlinkError, NoPluginError
 
+from lurkiti import __version__
 from lurkiti.ui.trayicon import TrayIcon
 from lurkiti.session import load_sl_user_stuff
 from lurkiti.command import configure_child_reaping
@@ -42,6 +43,11 @@ def excepthook(exc_type, exc_value, exc_tb):
 def parse_arguments() -> argparse.Namespace:
   parser = argparse.ArgumentParser(
     description='Lurkiti - Monitor livestreams from system tray'
+  )
+  parser.add_argument(
+    '-V', '--version',
+    action='version',
+    version=f'%(prog)s {__version__}'
   )
   parser.add_argument(
     '-c', '--config',
