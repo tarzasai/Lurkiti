@@ -90,6 +90,22 @@ def _make_cfg(tmp_path):
     return Configuration(Path(tmp))
 
 
+def test_streams_tab_title_counts_monitored_streams(app, tmp_path, monkeypatch):
+    cfg = _make_cfg(tmp_path)
+    from lurkiti.ui.settings import SettingsWindow
+
+    monkeypatch.setattr('lurkiti.ui.settings.get_stream_icon', lambda *a, **k: None)
+    win = SettingsWindow(cfg)
+    try:
+        assert win.tabs.tabText(0) == 'Streams (2)'
+        cfg.set_stream(Stream(url='https://c.example/', name='C', type='t1', always_on=True))
+        cfg.set_stream(Stream(url='https://d.example/', name='D', type='t1'))
+        win._reload_treeview()
+        assert win.tabs.tabText(0) == 'Streams (3)'
+    finally:
+        win.close()
+
+
 def test_settings_load_and_toggle_stream_notify(app, tmp_path, monkeypatch):
     cfg = _make_cfg(tmp_path)
     from lurkiti.ui.settings import SettingsWindow

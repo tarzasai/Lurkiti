@@ -308,10 +308,16 @@ class SettingsWindow(QWidget):
     self.tabs.addTab(self.tab_settings, 'Settings')
     self.tab_about = self._create_about_tab()
     self.tabs.addTab(self.tab_about, 'About')
+    self.stream_model.modelReset.connect(self._update_streams_tab_title)
+    self._update_streams_tab_title()
     layout = QVBoxLayout()
     layout.addWidget(self.tabs)
     self.setLayout(layout)
     self._on_stream_selected(None, None)
+
+  def _update_streams_tab_title(self) -> None:
+    monitored = sum(1 for stream in self.cfg.streams.values() if not stream.always_on)
+    self.tabs.setTabText(self.tabs.indexOf(self.tab_streams), f'Streams ({monitored})')
 
   def _create_streams_tab(self) -> QWidget:
     widget = QWidget()
