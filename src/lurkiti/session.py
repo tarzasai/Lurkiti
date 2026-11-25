@@ -1,5 +1,6 @@
 import logging
 import shlex
+import threading
 from typing import NamedTuple
 from streamlink import Streamlink
 from streamlink.user_input import UserInputRequester
@@ -43,6 +44,11 @@ class _NonInteractiveUserInputRequester(UserInputRequester):
 
 
 sls = Streamlink({'user-input-requester': _NonInteractiveUserInputRequester()})
+
+# Liveness checks run concurrently on worker threads; each thread probes with its
+# own session (rebuilt after a reload) since per-check option setup mutates it.
+_thread_local = threading.local()
+_generation = 0
 
 # Cached Streamlink CLI parser (built once, rebuilt whenever plugins are (re)loaded)
 # and the discovered main config `@file` token(s). Both are populated by
@@ -113,27 +119,52 @@ def load_sl_user_stuff() -> None:
   It is safe to call again at runtime (e.g. from the settings "Reload Streamlink"
   button) to pick up changes without restarting the application.
   '''
-  global _parser, _main_config_tokens
+  global _parser, _main_config_tokens, _generation
   # (Re)load user-provided ("sideloaded") plugins from Streamlink's standard plugin directories
-  for directory in PLUGIN_DIRS:
-    if not directory.is_dir():
-      continue
-    try:
-      if sls.plugins.load_path(directory):
-        log.debug(f'Loaded Streamlink user plugins from {directory}: {", ".join(sls.plugins.get_names())}')
-    except Exception as err:
-      log.error(f'Error loading Streamlink plugins from {directory}: {err}')
+  _load_user_plugins(sls)
   # Rebuild the cached parser so newly loaded plugins' arguments are recognized
   _parser = _build_streamlink_parser()
   # Cache the main config token and apply its session options to the shared session
   # so it inherits the user's baseline (proxies, HTTP settings, etc.)
   _main_config_tokens = _main_streamlink_config_tokens()
+  _apply_main_config(sls)
+  _generation += 1
+
+
+def _load_user_plugins(session: Streamlink) -> None:
+  for directory in PLUGIN_DIRS:
+    if not directory.is_dir():
+      continue
+    try:
+      if session.plugins.load_path(directory):
+        log.debug(f'Loaded Streamlink user plugins from {directory}: {", ".join(session.plugins.get_names())}')
+    except Exception as err:
+      log.error(f'Error loading Streamlink plugins from {directory}: {err}')
+
+
+def _apply_main_config(session: Streamlink) -> None:
   if _main_config_tokens:
     try:
-      setup_session_options(sls, _parse_streamlink_tokens(_main_config_tokens))
+      setup_session_options(session, _parse_streamlink_tokens(_main_config_tokens))
       log.debug(f'Loaded Streamlink config from {_main_config_tokens}')
     except Exception as err:
       log.error(f'Error loading Streamlink config: {err}')
+
+
+def _probe_session() -> Streamlink:
+  '''
+  Session for liveness checks: the shared `sls` on the main thread, a private
+  one (with the same plugins and main config) on any other thread.
+  '''
+  if threading.current_thread() is threading.main_thread():
+    return sls
+  if getattr(_thread_local, 'generation', None) != _generation:
+    session = Streamlink({'user-input-requester': _NonInteractiveUserInputRequester()})
+    _load_user_plugins(session)
+    _apply_main_config(session)
+    _thread_local.session = session
+    _thread_local.generation = _generation
+  return _thread_local.session
 
 
 def is_stream_live(
@@ -162,7 +193,8 @@ def is_stream_live(
   '''
   # Resolve the plugin first (raises NoPluginError for unsupported URLs) so the
   # matching per-plugin config file can be loaded alongside the CLI arguments.
-  pluginname, pluginclass, resolved_url = sls.resolve_url(stream_url)
+  session = _probe_session()
+  pluginname, pluginclass, resolved_url = session.resolve_url(stream_url)
   # Build the token list the way the streamlink command would: config files first
   # (main config carries prefixed plugin args like `--twitch-password`, per-plugin
   # config carries the same for a single plugin), then global arguments, then
@@ -176,9 +208,9 @@ def is_stream_live(
   args = _parse_streamlink_tokens(tokens)
   # Apply session-level options and resolve plugin options (the latter carry
   # authentication credentials), then probe for available streams.
-  setup_session_options(sls, args)
-  options = setup_plugin_options(sls, args, pluginname, pluginclass)
-  plugin = pluginclass(sls, resolved_url, options)
+  setup_session_options(session, args)
+  options = setup_plugin_options(session, args, pluginname, pluginclass)
+  plugin = pluginclass(session, resolved_url, options)
   streams = plugin.streams()
   is_live = bool(streams)
   log.debug(f'Stream {stream_url} [{pluginname}] has currently {len(streams)} available stream(s)')

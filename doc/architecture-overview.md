@@ -12,7 +12,7 @@ flowchart TD
     TRAY --> NOTIF[Notifier]
     TRAY --> SET[Settings / Stream dialogs]
 
-    MON --> SESS[Streamlink session]
+    MON --> SESS[Streamlink sessions<br/>one per probe thread]
     SESS --> SL[Streamlink API]
     SL -->|resolve + probe| MON
 
@@ -48,8 +48,8 @@ C4Context
 ## Key Design Choices
 
 - The app has no main window; the `TrayIcon` (`ui/trayicon.py`) is the composition root. It owns the `Configuration`, the `StreamMonitor` thread, the `Notifier`, and the settings/stream dialogs.
-- Liveness checks run off the UI thread in `StreamMonitor` (a `QThread`). It probes **one due stream per tick** in round-robin order rather than all at once, so a large stream list never blocks or bursts, and the app stays responsive.
-- Stream resolution and probing go through a single shared Streamlink session (`session.py`) that mirrors the real `streamlink` command: it loads sideloaded plugins, the user's main config, and per-plugin config files, and parses arguments with Streamlink's own CLI parser. The expensive setup (plugin load + parser build) happens once at startup and can be reloaded at runtime.
+- Liveness checks run off the UI thread in `StreamMonitor` (a `QThread`), which hands due streams (oldest first) to a small pool of probe threads: up to 4 checks at once, but never two against the same site, so a large stream list is checked quickly without bursting any single site. A site that answers HTTP 429 gets a growing pause between its checks, and the rate-limited stream keeps its previous status.
+- Stream resolution and probing mirror the real `streamlink` command (`session.py`): sideloaded plugins, the user's main config, and per-plugin config files are loaded, and arguments are parsed with Streamlink's own CLI parser. The expensive setup (plugin load + parser build) happens once at startup and can be reloaded at runtime. The main thread uses a shared session; each probe thread gets its own, so concurrent checks never share per-stream options or HTTP state.
 - Monitoring results are delivered to the UI as Qt signals (`stream_online(Stream, probe)` / `stream_offline(Stream)`); the tray reacts by updating its status icon, persisting per-stream state, and optionally notifying.
 - Notifications are handled by `Notifier`, which drives the async `desktop-notifier` backend on a dedicated asyncio loop thread so action-button callbacks (the **Launch** button) keep working. If the backend is unavailable, the tray falls back to `QSystemTrayIcon.showMessage`.
 - Players are launched **fire-and-forget**: `command.py` builds the argument list (Streamlink or Clippiti) and spawns a detached process in its own session. `SIGCHLD` is set to `SIG_IGN` so exited players are reaped by the kernel and never linger as zombies.

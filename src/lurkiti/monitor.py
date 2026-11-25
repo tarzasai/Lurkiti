@@ -1,6 +1,8 @@
 import time
 import logging
 import threading
+from concurrent.futures import ThreadPoolExecutor
+from urllib.parse import urlsplit
 from PyQt6.QtCore import QThread, pyqtSignal
 
 from lurkiti.model import Configuration, Stream, NotifyMode
@@ -17,6 +19,29 @@ _IDLE_WAKE_CAP_SECONDS = 3600.0
 # hot-spinning. It never delays wake() and never applies to idle sleeps.
 _MIN_SLEEP_SECONDS = 0.15
 
+# Liveness checks are mostly network waits, so a few run at once, but never two
+# against the same site: some sites answer concurrent probes with 429.
+_MAX_PARALLEL_CHECKS = 4
+
+# Pause before re-probing a site that answered 429; it doubles on every further
+# 429 up to the cap.
+_SITE_GAP_SECONDS = 0.5
+_SITE_GAP_MAX_SECONDS = 5.0
+
+
+def _site_of(url: str) -> str:
+  host = (urlsplit(url).hostname or '').lower()
+  return host.removeprefix('www.')
+
+
+def _is_rate_limited(err: BaseException) -> bool:
+  while err is not None:
+    response = getattr(err, 'response', None)
+    if getattr(response, 'status_code', None) == 429:
+      return True
+    err = err.__cause__
+  return False
+
 
 class StreamMonitor(QThread):
   stream_online = pyqtSignal(Stream, object)
@@ -30,6 +55,10 @@ class StreamMonitor(QThread):
     self.stream_status: dict[str, bool] = {}
     self.last_check_time: dict[str, float] = {}
     self._wake = threading.Event()
+    self._in_flight: dict[str, str] = {}  # url -> site
+    self._site_gap: dict[str, float] = {}
+    self._in_flight_lock = threading.Lock()
+    self._executor: ThreadPoolExecutor | None = None
     # Config edits (global or per-stream, e.g. toggling always_on or changing the
     # check interval) must take effect without waiting out the current sleep.
     self.cfg.config_changed.connect(self.wake)
@@ -44,6 +73,9 @@ class StreamMonitor(QThread):
       # Sleep until the next check is due, or until wake() is signalled.
       self._wake.wait(self._seconds_until_next_wake())
       self._wake.clear()
+    if self._executor is not None:
+      self._executor.shutdown(wait=False, cancel_futures=True)
+      self._executor = None
 
   def wake(self) -> None:
     '''Interrupt the current sleep so the loop re-evaluates the config at once.'''
@@ -58,11 +90,16 @@ class StreamMonitor(QThread):
     '''
     if self.paused:
       return _IDLE_WAKE_CAP_SECONDS
+    with self._in_flight_lock:
+      in_flight = dict(self._in_flight)
+    if len(in_flight) >= _MAX_PARALLEL_CHECKS:
+      return _IDLE_WAKE_CAP_SECONDS  # a finishing check calls wake()
+    busy_sites = set(in_flight.values())
     interval = self.cfg.check_interval_mins * 60
     now = time.time()
     soonest = None
     for url, stream in self.cfg.streams.items():
-      if stream.always_on:
+      if stream.always_on or url in in_flight or _site_of(url) in busy_sites:
         continue
       last_check = self.last_check_time.get(url, 0)
       if last_check == 0:
@@ -75,10 +112,13 @@ class StreamMonitor(QThread):
     return max(_MIN_SLEEP_SECONDS, soonest)
 
   def _check_streams(self) -> None:
+    with self._in_flight_lock:
+      in_flight = dict(self._in_flight)
+    busy_sites = set(in_flight.values())
     # Filter enabled streams that need checking
     streams_to_check = []
     for url, stream in self.cfg.streams.items():
-      if stream.always_on:
+      if stream.always_on or url in in_flight:
         continue
       last_check = self.last_check_time.get(url, 0)
       time_since_check = time.time() - last_check
@@ -87,13 +127,38 @@ class StreamMonitor(QThread):
         streams_to_check.append((url, last_check, self.cfg.streams[url]))
     # Sort by last check time (oldest first, never checked go first)
     streams_to_check.sort(key=lambda x: x[1])
-    # Check only the first stream that's due
-    if streams_to_check:
-      url, _, stream = streams_to_check[0]
+    # Start the oldest due checks, up to the free worker slots
+    free_slots = _MAX_PARALLEL_CHECKS - len(in_flight)
+    if not streams_to_check or free_slots <= 0:
+      return
+    if self._executor is None:
+      self._executor = ThreadPoolExecutor(max_workers=_MAX_PARALLEL_CHECKS, thread_name_prefix='lurkiti-check')
+    for url, _, stream in streams_to_check:
+      if free_slots <= 0:
+        break
+      site = _site_of(url)
+      if site in busy_sites:
+        continue
+      busy_sites.add(site)
+      free_slots -= 1
+      with self._in_flight_lock:
+        self._in_flight[url] = site
+      self._executor.submit(self._run_check, url, stream)
+
+  def _run_check(self, url: str, stream: Stream) -> None:
+    try:
       self._check_single_stream(stream)
+    finally:
       self.last_check_time[url] = time.time()
+      gap = self._site_gap.get(_site_of(url))
+      if gap:
+        time.sleep(gap)
+      with self._in_flight_lock:
+        self._in_flight.pop(url, None)
+      self.wake()
 
   def _check_single_stream(self, stream: Stream) -> None:
+    started = time.monotonic()
     try:
       probe = is_stream_live(
         stream.url,
@@ -102,9 +167,23 @@ class StreamMonitor(QThread):
       )
       is_online = probe.is_live
     except Exception as e:
+      if _is_rate_limited(e):
+        site = _site_of(stream.url)
+        gap = min(_SITE_GAP_MAX_SECONDS, max(_SITE_GAP_SECONDS, 2 * self._site_gap.get(site, 0)))
+        self._site_gap[site] = gap
+        log.warning(f'Rate limited checking {stream.name or stream.url}; keeping its previous status, pausing {gap:.1f}s between {site} checks')
+        return
       log.debug(f'Stream offline or error checking {stream.url}: {e}')
       probe = None
       is_online = False
+    site = _site_of(stream.url)
+    if site in self._site_gap:
+      gap = self._site_gap[site] / 2
+      if gap < _SITE_GAP_SECONDS:
+        del self._site_gap[site]
+      else:
+        self._site_gap[site] = gap
+    log.debug(f'Checked {stream.name or stream.url} in {time.monotonic() - started:.2f}s: {"online" if is_online else "offline"}')
     previous_status = self.stream_status.get(stream.url, False)
     # Detect status changes
     if is_online and not previous_status:

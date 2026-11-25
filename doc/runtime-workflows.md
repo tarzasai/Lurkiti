@@ -35,9 +35,9 @@ sequenceDiagram
 
     loop while not paused
         Mon->>Mon: mark always_on streams live
-        Mon->>Mon: pick the single oldest "due" stream
+        Mon->>Mon: pick the oldest "due" streams<br/>(up to 4 checks in flight, one per site)
         Note over Mon: due = never checked, or<br/>check_interval_mins elapsed
-        Mon->>SL: is_stream_live(url, args)
+        Mon->>SL: is_stream_live(url, args) on a worker thread
         SL-->>Mon: StreamProbe(plugin, is_live, metadata)
         alt transition offline -> online
             Mon-->>Tray: stream_online(stream, probe)
@@ -48,7 +48,7 @@ sequenceDiagram
     end
 ```
 
-The loop is event-driven: it sleeps until the next stream is due (via a `threading.Event`) and is woken immediately on `pause`/`resume`/`stop` and on any configuration change (`config_changed`, e.g. an `always_on` toggle or interval edit). Only one stream is probed per iteration, throttled by `check_interval_mins`, so idle CPU is effectively zero between checks.
+The loop is event-driven: it sleeps until the next stream is due (via a `threading.Event`) and is woken immediately on `pause`/`resume`/`stop`, on any configuration change (`config_changed`, e.g. an `always_on` toggle or interval edit) and whenever a check finishes. Due checks run on a pool of up to 4 worker threads, each with its own Streamlink session, but never two against the same site at once. A site that answers HTTP 429 gets a pause between its checks (0.5 s, doubling up to 5 s, halving again after each successful check), and the rate-limited stream keeps its previous status instead of being reported offline. Each check's duration is logged at debug level.
 
 ## 3. Going Live and Notification
 
@@ -106,6 +106,7 @@ flowchart TD
     B --> C[Reload sideloaded plugins]
     C --> D[Rebuild cached CLI parser]
     D --> E[Re-apply main config session options]
+    E --> F[Probe threads rebuild their sessions on their next check]
 ```
 
 This picks up newly added plugins or config changes without restarting the app.
@@ -114,7 +115,7 @@ This picks up newly added plugins or config changes without restarting the app.
 
 ```mermaid
 flowchart TD
-    A[Quit from tray menu] --> B[Stop StreamMonitor thread]
+    A[Quit from tray menu] --> B[Stop StreamMonitor thread<br/>pending probes cancelled]
     B --> C[Notifier.shutdown: clear + stop loop thread]
     C --> D[QApplication quits]
 ```

@@ -10,12 +10,14 @@ Figures below were captured from a live instance that had been monitoring stream
 - Method: `/proc/<pid>/task` for threads, `/proc/<pid>/smaps_rollup` and `smaps` for memory, `/proc/<pid>/stat` for cumulative CPU time
 
 > Absolute numbers vary by host and Qt platform. Unlike a GPU video app, Lurkiti's thread count and memory do **not** scale with CPU core count or window size; they are essentially flat regardless of how many streams are configured.
+>
+> The figures were measured before liveness checks moved to a probe pool; that pool adds up to 4 threads, each with its own Streamlink session.
 
 ## Summary (per instance)
 
 | Resource | Observed | Notes |
 | --- | --- | --- |
-| Threads | 6 | Flat; does not grow with the number of configured streams |
+| Threads | 6 (+ up to 4 probe threads) | Bounded; does not grow with the number of configured streams |
 | RSS | ~374 MB | Resident set after days of uptime (~180 MB fresh; grows with uptime) |
 | PSS | ~300 MB | Proportional set (shared pages divided across users) |
 | CPU | ~0% idle | 0% between checks (monitor thread blocked); brief spikes only when a stream is probed |
@@ -28,11 +30,12 @@ Launched players (Streamlink, mpv/VLC, Clippiti) run as separate processes and a
 | --- | --- | --- | --- | --- |
 | `python3` (main) | 1 | `QApplication` | UI event loop, tray, menus | No |
 | `StreamMonitor` | 1 | `monitor.py` (`QThread`) | Off-thread liveness probing | No (keeps UI responsive) |
+| `lurkiti-check_N` | 0–4 | `monitor.py` (`ThreadPoolExecutor`) | Concurrent liveness probes, one per site at a time | Yes (`_MAX_PARALLEL_CHECKS`) |
 | `lurkiti-notifie` | 1 | `notifier.py` asyncio loop | Receives DBus/Cocoa callbacks for the Launch button | No (needed for action buttons) |
 | `QDBusConnection` | 1 | Qt / DBus | Desktop integration (notifications, tray) | No |
 | `WaylandEventThr` | 2 | Qt Wayland platform | Windowing/event delivery | No (platform-provided) |
 
-The monitor deliberately probes **one stream per tick** on a short sleep, so the thread count does not grow with the number of configured streams — only the time to cycle through all of them does.
+Liveness probes run on a small pool (at most 4 threads, created on first use), so the thread count does not grow with the number of configured streams. Each pool thread keeps its own Streamlink session with the sideloaded plugins loaded, which adds a little memory per thread.
 
 ## Memory
 
@@ -47,7 +50,7 @@ The dominant cost is the **Python heap**: importing Streamlink and its plugin se
 
 ## CPU
 
-The monitor thread is event-driven: it sleeps until the next stream is actually due (up to minutes away) and is woken immediately — via a `threading.Event` — on control changes (pause/resume/stop) and on any configuration change (including `always_on` toggles and interval edits). Between due checks it consumes no CPU; brief spikes occur only when a due stream is probed (a Streamlink resolve + liveness check), throttled to one stream per `check_interval_mins`. A small sleep floor keeps an initial backlog (or a zero/tiny interval) from hot-spinning.
+The monitor thread is event-driven: it sleeps until the next stream is actually due (up to minutes away) and is woken immediately — via a `threading.Event` — on control changes (pause/resume/stop) and on any configuration change (including `always_on` toggles and interval edits). Between due checks it consumes no CPU; brief spikes occur only when due streams are probed (a Streamlink resolve + liveness check, up to 4 at once on the probe pool), each stream at most once per `check_interval_mins`. A small sleep floor keeps an initial backlog (or a zero/tiny interval) from hot-spinning.
 
 Measured on the event-driven build: over a 30 s idle window (no probe due) both the `StreamMonitor` thread and the whole process used **0.000%** CPU; a window that happened to include a liveness probe measured ~1.3% for that interval — i.e. the only CPU cost is the probe work itself, not any polling baseline. (An earlier build polled on a fixed ~150 ms heartbeat and averaged ~0.3% even while idle.)
 
@@ -59,7 +62,7 @@ A watched Clippiti instance has its own, much larger footprint (embedded mpv + G
 
 ## Applied Optimizations
 
-- **Single-probe round-robin monitoring** — avoids bursting N concurrent Streamlink checks; cost scales in *time*, not in threads or memory.
+- **Bounded parallel probing** — up to 4 checks at once, at most one per site, with a per-site pause only after HTTP 429; a full cycle is several times faster than one-by-one checks while threads and memory stay bounded.
 - **Event-driven monitor loop** — the monitor sleeps until the next check is due and is woken immediately on control or configuration changes, so there is no fixed polling heartbeat and idle CPU is effectively zero.
 - **One-time Streamlink setup** — plugins and the CLI parser are built once and cached; runtime reload is explicit (settings button), not per-check.
 - **Detached, auto-reaped players** — no lingering child processes and no per-player bookkeeping in the app.
@@ -67,4 +70,4 @@ A watched Clippiti instance has its own, much larger footprint (embedded mpv + G
 
 ## Conclusion
 
-Lurkiti's steady-state footprint is small in CPU and flat in threads (6), with memory (~374 MB RSS / ~300 MB PSS) dominated by the Python + Streamlink + Qt runtime loaded at startup rather than by anything the app does per check. The largest single contributor — the Python heap holding Streamlink and its plugins — is fixed overhead of the chosen stack. The heavy media work lives entirely in the external player processes, which are intentionally outside the app's lifecycle.
+Lurkiti's steady-state footprint is small in CPU and bounded in threads (6, plus at most 4 probe threads), with memory (~374 MB RSS / ~300 MB PSS) dominated by the Python + Streamlink + Qt runtime loaded at startup rather than by anything the app does per check. The largest single contributor — the Python heap holding Streamlink and its plugins — is fixed overhead of the chosen stack. The heavy media work lives entirely in the external player processes, which are intentionally outside the app's lifecycle.
